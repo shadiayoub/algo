@@ -54,7 +54,7 @@ CONFIG = {
     "pivot_proximity_percent": 0.5,  # 0.5% distance to consider "at level"
     "pivot_timeframe": "1d",  # Daily pivots
     
-    "check_interval": 60,
+    "check_interval": 30,
     "enable_audio": True,
     "audio_cooldown_seconds": 300,
     "log_to_file": True,
