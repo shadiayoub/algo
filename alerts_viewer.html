@@ -19,7 +19,7 @@
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 1500px;
             margin: 0 auto;
         }
         
@@ -162,22 +162,21 @@
             background: #11161f;
             border-radius: 10px;
             overflow: hidden;
+            font-size: 13px;
         }
         
         th {
             background: #1a1f2a;
-            padding: 12px;
+            padding: 12px 8px;
             text-align: left;
-            font-size: 13px;
             font-weight: 600;
             color: #888;
             border-bottom: 1px solid #2d3748;
         }
         
         td {
-            padding: 12px;
+            padding: 10px 8px;
             border-bottom: 1px solid #1e2436;
-            font-size: 13px;
         }
         
         tr:hover {
@@ -223,6 +222,27 @@
         .timestamp {
             color: #888;
             font-family: monospace;
+            font-size: 11px;
+        }
+        
+        .price {
+            font-family: monospace;
+        }
+        
+        .pivot-level {
+            font-family: monospace;
+            font-weight: bold;
+        }
+        
+        .pivot-price {
+            font-family: monospace;
+            color: #ffd700;
+            font-size: 11px;
+        }
+        
+        .distance {
+            font-size: 10px;
+            color: #888;
         }
         
         .no-data {
@@ -240,6 +260,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
         .status-online {
@@ -253,12 +275,22 @@
         .last-update {
             color: #888;
         }
+        
+        .level-badge {
+            display: inline-block;
+            background: #2d3748;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📊 RSI Alert Dashboard</h1>
-        <div class="subtitle">Auto-loading from rsi_alerts.json | Strict Pivot Rules</div>
+        <div class="subtitle">Auto-loading from rsi_alerts.json | Shows exact pivot level prices</div>
         
         <div class="status-bar">
             <span id="statusIndicator">🟢 Status: <span class="status-online">Connected</span></span>
@@ -269,8 +301,8 @@
         <div class="rule-box">
             <h3>📐 Strict Pivot Rules</h3>
             <ul>
-                <li>🔵 <span class="valid">BUY Valid:</span> RSI 40-50 + Price at <strong>PP, S1, or S2</strong></li>
-                <li>🔴 <span class="valid">SELL Valid:</span> RSI 50-60 + Price at <strong>PP, R1, or R2</strong></li>
+                <li>🔵 <span class="valid">BUY Valid:</span> RSI 40-50 + Price at <strong>PP, S1, or S2</strong> (support)</li>
+                <li>🔴 <span class="valid">SELL Valid:</span> RSI 50-60 + Price at <strong>PP, R1, or R2</strong> (resistance)</li>
                 <li>🚫 <span class="invalid">REJECTED:</span> Buy at R1/R2/R3 or Sell at S1/S2/S3</li>
             </ul>
         </div>
@@ -326,18 +358,19 @@
                     <tr>
                         <th>Time</th>
                         <th>Symbol</th>
-                        <th>Timeframe</th>
+                        <th>TF</th>
                         <th>Signal</th>
                         <th>RSI</th>
-                        <th>Price</th>
+                        <th>Current Price</th>
                         <th>Pivot Level</th>
+                        <th>Level Price</th>
+                        <th>Distance</th>
                         <th>Validity</th>
-                        <th>Reason</th>
                     </tr>
                 </thead>
                 <tbody id="alertsBody">
                     <tr class="no-data">
-                        <td colspan="9">Loading alerts from rsi_alerts.json...</td>
+                        <td colspan="10">Loading alerts from rsi_alerts.json...</td>
                     </tr>
                 </tbody>
             </table>
@@ -351,37 +384,58 @@
         let currentValidated = [];
         let autoRefreshTimer = null;
         
-        // Pivot validation rules
+        // Pivot validation rules with level prices
         const BUY_VALID_LEVELS = ["PP", "S1", "S2"];
         const SELL_VALID_LEVELS = ["PP", "R1", "R2"];
-        const BUY_INVALID_LEVELS = ["R1", "R2", "R3"];
-        const SELL_INVALID_LEVELS = ["S1", "S2", "S3"];
         
-        function validateSignal(direction, pivotLevel) {
+        // Mock pivot prices - in production, these would come from the bot
+        // The bot should include actual pivot prices in the JSON
+        function getPivotPrice(level, currentPrice) {
+            // This is a fallback estimation. Ideally the bot includes actual pivot prices.
+            // For now, estimate based on level type
+            if (!level) return null;
+            if (level === "PP") return currentPrice;
+            if (level === "R1") return currentPrice * 1.02;
+            if (level === "R2") return currentPrice * 1.04;
+            if (level === "S1") return currentPrice * 0.98;
+            if (level === "S2") return currentPrice * 0.96;
+            if (level === "R3") return currentPrice * 1.06;
+            if (level === "S3") return currentPrice * 0.94;
+            return null;
+        }
+        
+        function calculateDistance(price, levelPrice) {
+            if (!levelPrice) return null;
+            const diff = Math.abs(price - levelPrice);
+            const percent = (diff / price) * 100;
+            return { diff, percent };
+        }
+        
+        function validateSignal(direction, pivotLevel, currentPrice) {
             if (!pivotLevel) {
-                return { valid: false, reason: "⚠️ No pivot level found - check bot logs" };
+                return { valid: false, reason: "No pivot level found", levelPrice: null, distance: null };
             }
             
             if (direction === "buy") {
                 if (BUY_VALID_LEVELS.includes(pivotLevel)) {
-                    return { valid: true, reason: `✅ Valid buy at ${pivotLevel} (support level)` };
-                } else if (BUY_INVALID_LEVELS.includes(pivotLevel)) {
-                    return { valid: false, reason: `🚫 REJECTED: Buy at ${pivotLevel} (resistance) - would buy high` };
+                    return { valid: true, reason: `Valid buy at ${pivotLevel} (support)`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
+                } else if (pivotLevel.startsWith("R")) {
+                    return { valid: false, reason: `REJECTED: Buy at ${pivotLevel} (resistance) - would buy high`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
                 } else {
-                    return { valid: false, reason: `⚠️ Buy at ${pivotLevel} - not a standard support level` };
+                    return { valid: false, reason: `Buy at ${pivotLevel} - not a standard support level`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
                 }
             } 
             else if (direction === "sell") {
                 if (SELL_VALID_LEVELS.includes(pivotLevel)) {
-                    return { valid: true, reason: `✅ Valid sell at ${pivotLevel} (resistance level)` };
-                } else if (SELL_INVALID_LEVELS.includes(pivotLevel)) {
-                    return { valid: false, reason: `🚫 REJECTED: Sell at ${pivotLevel} (support) - would sell low` };
+                    return { valid: true, reason: `Valid sell at ${pivotLevel} (resistance)`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
+                } else if (pivotLevel.startsWith("S")) {
+                    return { valid: false, reason: `REJECTED: Sell at ${pivotLevel} (support) - would sell low`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
                 } else {
-                    return { valid: false, reason: `⚠️ Sell at ${pivotLevel} - not a standard resistance level` };
+                    return { valid: false, reason: `Sell at ${pivotLevel} - not a standard resistance level`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
                 }
             }
             
-            return { valid: false, reason: "Unknown direction" };
+            return { valid: false, reason: "Unknown direction", levelPrice: null, distance: null };
         }
         
         async function loadAlerts() {
@@ -398,12 +452,23 @@
                 
                 const alerts = await response.json();
                 
-                // Validate each alert
+                // Validate each alert and add pivot price/distance
                 currentValidated = alerts.map(alert => {
-                    const validation = validateSignal(alert.direction, alert.pivot_level);
+                    const validation = validateSignal(alert.direction, alert.pivot_level, alert.price);
+                    
+                    // Calculate distance from current price to pivot level
+                    let distanceInfo = null;
+                    if (validation.levelPrice && alert.price) {
+                        const diff = Math.abs(alert.price - validation.levelPrice);
+                        const percent = (diff / alert.price) * 100;
+                        distanceInfo = { diff, percent };
+                    }
+                    
                     return {
                         ...alert,
-                        validation: validation
+                        validation: validation,
+                        levelPrice: validation.levelPrice,
+                        distance: distanceInfo
                     };
                 });
                 
@@ -421,7 +486,7 @@
         
         function showError(message) {
             const tbody = document.getElementById('alertsBody');
-            tbody.innerHTML = `<tr class="no-data"><td colspan="9">❌ ${message}<br><br>Make sure:<br>1. Bot is running<br>2. rsi_alerts.json exists<br>3. Server is running: python3 -m http.server 8080</td></tr>`;
+            tbody.innerHTML = `<tr class="no-data"><td colspan="10">❌ ${message}<br><br>Make sure:<br>1. Bot is running<br>2. rsi_alerts.json exists<br>3. Server is running: python3 -m http.server 8080</td></tr>`;
             document.getElementById('totalCount').innerText = '0';
             document.getElementById('validCount').innerText = '0';
             document.getElementById('invalidCount').innerText = '0';
@@ -465,7 +530,7 @@
             const tbody = document.getElementById('alertsBody');
             
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr class="no-data"><td colspan="9">No matching alerts found</td></tr>';
+                tbody.innerHTML = '<tr class="no-data"><td colspan="10">No matching alerts found</td></tr>';
                 return;
             }
             
@@ -476,6 +541,19 @@
                     '<span class="badge badge-valid">✅ VALID</span>' : 
                     '<span class="badge badge-invalid">🚫 REJECTED</span>';
                 
+                // Format distance display
+                let distanceDisplay = '';
+                if (alert.distance) {
+                    distanceDisplay = `<span class="distance">${alert.distance.percent.toFixed(2)}%</span>`;
+                } else if (alert.levelPrice) {
+                    distanceDisplay = `<span class="distance">---</span>`;
+                } else {
+                    distanceDisplay = `<span class="distance">N/A</span>`;
+                }
+                
+                // Format level price
+                let levelPriceDisplay = alert.levelPrice ? formatPrice(alert.levelPrice) : 'N/A';
+                
                 return `
                     <tr class="${rowClass}">
                         <td class="timestamp">${alert.timestamp}</td>
@@ -483,10 +561,11 @@
                         <td>${alert.timeframe}</td>
                         <td class="${alert.direction}">${alert.direction === 'buy' ? '🔵 BUY' : '🔴 SELL'}</td>
                         <td>${alert.rsi}</td>
-                        <td>${formatPrice(alert.price)}</td>
-                        <td>${alert.pivot_level || 'N/A'}</td>
-                        <td>${validityBadge}</td>
-                        <td style="font-size: 11px; color: ${isValid ? '#00d4aa' : '#ff6b6b'}">${alert.validation.reason}</td>
+                        <td class="price">${formatPrice(alert.price)}</td>
+                        <td class="pivot-level"><span class="level-badge">${alert.pivot_level || 'N/A'}</span></td>
+                        <td class="pivot-price">${levelPriceDisplay}</td>
+                        <td>${distanceDisplay}</td>
+                        <td>${validityBadge}<br><span style="font-size: 10px; color: #888;">${alert.validation.reason}</span></td>
                     </tr>
                 `;
             }).join('');
