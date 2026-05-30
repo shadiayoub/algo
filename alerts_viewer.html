@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RSI Alerts Dashboard</title>
+    <title>RSI Alerts Dashboard - Auto Load</title>
     <style>
         * {
             margin: 0;
@@ -33,6 +33,40 @@
             color: #888;
             margin-bottom: 30px;
             font-size: 14px;
+        }
+        
+        .rule-box {
+            background: #1a1f2a;
+            border-left: 3px solid #00d4aa;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        
+        .rule-box h3 {
+            color: #00d4aa;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .rule-box ul {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .rule-box li {
+            color: #888;
+        }
+        
+        .rule-box .valid {
+            color: #00d4aa;
+        }
+        
+        .rule-box .invalid {
+            color: #ff6b6b;
         }
         
         .controls {
@@ -110,6 +144,18 @@
             color: #00d4aa;
         }
         
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+        
+        .auto-refresh input {
+            width: 50px;
+            text-align: center;
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
@@ -148,16 +194,35 @@
             font-weight: bold;
         }
         
+        .rejected {
+            color: #666;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .badge-valid {
+            background: #00d4aa20;
+            color: #00d4aa;
+            border: 1px solid #00d4aa40;
+        }
+        
+        .badge-invalid {
+            background: #ff6b6b20;
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b40;
+        }
+        
         .timestamp {
             color: #888;
             font-family: monospace;
-        }
-        
-        .refresh-note {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: #555;
         }
         
         .no-data {
@@ -166,27 +231,52 @@
             color: #666;
         }
         
-        .auto-refresh {
+        .status-bar {
+            background: #1e2436;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 12px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            margin-left: auto;
         }
         
-        .auto-refresh input {
-            width: 50px;
-            text-align: center;
+        .status-online {
+            color: #00d4aa;
+        }
+        
+        .status-offline {
+            color: #ff6b6b;
+        }
+        
+        .last-update {
+            color: #888;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 RSI Alerts Dashboard</h1>
-        <div class="subtitle">Real-time alerts from your RSI bot • Data from rsi_alerts.json</div>
+        <h1>📊 RSI Alert Dashboard</h1>
+        <div class="subtitle">Auto-loading from rsi_alerts.json | Strict Pivot Rules</div>
+        
+        <div class="status-bar">
+            <span id="statusIndicator">🟢 Status: <span class="status-online">Connected</span></span>
+            <span id="lastUpdate" class="last-update">Last update: --</span>
+            <span id="alertCount" class="last-update">Alerts: 0</span>
+        </div>
+        
+        <div class="rule-box">
+            <h3>📐 Strict Pivot Rules</h3>
+            <ul>
+                <li>🔵 <span class="valid">BUY Valid:</span> RSI 40-50 + Price at <strong>PP, S1, or S2</strong></li>
+                <li>🔴 <span class="valid">SELL Valid:</span> RSI 50-60 + Price at <strong>PP, R1, or R2</strong></li>
+                <li>🚫 <span class="invalid">REJECTED:</span> Buy at R1/R2/R3 or Sell at S1/S2/S3</li>
+            </ul>
+        </div>
         
         <div class="controls">
-            <button onclick="loadAlerts()">🔄 Refresh</button>
-            <button onclick="clearAlerts()">🗑️ Clear All</button>
+            <button onclick="refreshData()">🔄 Refresh Now</button>
             
             <div class="filter-group">
                 <label>Symbol:</label>
@@ -196,22 +286,11 @@
             </div>
             
             <div class="filter-group">
-                <label>Direction:</label>
-                <select id="directionFilter">
-                    <option value="all">All</option>
-                    <option value="buy">🔵 Buy Only</option>
-                    <option value="sell">🔴 Sell Only</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label>Timeframe:</label>
-                <select id="timeframeFilter">
-                    <option value="all">All</option>
-                    <option value="5m">5m</option>
-                    <option value="15m">15m</option>
-                    <option value="1h">1h</option>
-                    <option value="4h">4h</option>
+                <label>Signal Type:</label>
+                <select id="signalFilter">
+                    <option value="all">All Signals</option>
+                    <option value="valid">✅ Valid Only</option>
+                    <option value="invalid">🚫 Rejected Only</option>
                 </select>
             </div>
             
@@ -228,16 +307,16 @@
                 <div class="stat-value" id="totalCount">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Buy Signals</div>
-                <div class="stat-value" id="buyCount" style="color: #00d4aa;">0</div>
+                <div class="stat-label">✅ Valid Signals</div>
+                <div class="stat-value" id="validCount" style="color: #00d4aa;">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Sell Signals</div>
-                <div class="stat-value" id="sellCount" style="color: #ff6b6b;">0</div>
+                <div class="stat-label">🚫 Rejected</div>
+                <div class="stat-value" id="invalidCount" style="color: #ff6b6b;">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Last Alert</div>
-                <div class="stat-value" id="lastAlert" style="font-size: 14px;">--</div>
+                <div class="stat-label">Valid %</div>
+                <div class="stat-value" id="winRate" style="font-size: 24px;">0%</div>
             </div>
         </div>
         
@@ -251,60 +330,133 @@
                         <th>Signal</th>
                         <th>RSI</th>
                         <th>Price</th>
+                        <th>Pivot Level</th>
+                        <th>Validity</th>
+                        <th>Reason</th>
                     </tr>
                 </thead>
                 <tbody id="alertsBody">
                     <tr class="no-data">
-                        <td colspan="6">Loading alerts...</td>
+                        <td colspan="9">Loading alerts from rsi_alerts.json...</td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <div class="refresh-note">
-            ⚡ JSON file must be in same folder as this HTML file | Auto-refresh updates every X seconds
+        <div class="refresh-note" style="text-align: center; margin-top: 20px; font-size: 12px; color: #555;">
+            💡 Make sure you're running: <code>python3 -m http.server 8080</code> in the bot folder
         </div>
     </div>
 
     <script>
+        let currentValidated = [];
         let autoRefreshTimer = null;
+        
+        // Pivot validation rules
+        const BUY_VALID_LEVELS = ["PP", "S1", "S2"];
+        const SELL_VALID_LEVELS = ["PP", "R1", "R2"];
+        const BUY_INVALID_LEVELS = ["R1", "R2", "R3"];
+        const SELL_INVALID_LEVELS = ["S1", "S2", "S3"];
+        
+        function validateSignal(direction, pivotLevel) {
+            if (!pivotLevel) {
+                return { valid: false, reason: "⚠️ No pivot level found - check bot logs" };
+            }
+            
+            if (direction === "buy") {
+                if (BUY_VALID_LEVELS.includes(pivotLevel)) {
+                    return { valid: true, reason: `✅ Valid buy at ${pivotLevel} (support level)` };
+                } else if (BUY_INVALID_LEVELS.includes(pivotLevel)) {
+                    return { valid: false, reason: `🚫 REJECTED: Buy at ${pivotLevel} (resistance) - would buy high` };
+                } else {
+                    return { valid: false, reason: `⚠️ Buy at ${pivotLevel} - not a standard support level` };
+                }
+            } 
+            else if (direction === "sell") {
+                if (SELL_VALID_LEVELS.includes(pivotLevel)) {
+                    return { valid: true, reason: `✅ Valid sell at ${pivotLevel} (resistance level)` };
+                } else if (SELL_INVALID_LEVELS.includes(pivotLevel)) {
+                    return { valid: false, reason: `🚫 REJECTED: Sell at ${pivotLevel} (support) - would sell low` };
+                } else {
+                    return { valid: false, reason: `⚠️ Sell at ${pivotLevel} - not a standard resistance level` };
+                }
+            }
+            
+            return { valid: false, reason: "Unknown direction" };
+        }
         
         async function loadAlerts() {
             try {
                 const response = await fetch('rsi_alerts.json?' + Date.now());
                 if (!response.ok) {
                     if (response.status === 404) {
-                        showNoData('No alerts yet. Run the bot first to generate rsi_alerts.json');
+                        showError('rsi_alerts.json not found. Make sure the bot is running and has generated the file.');
                     } else {
-                        showNoData('Error loading file. Make sure rsi_alerts.json exists.');
+                        showError(`HTTP ${response.status}: Could not load file`);
                     }
                     return;
                 }
                 
                 const alerts = await response.json();
-                displayAlerts(alerts);
-                updateStats(alerts);
+                
+                // Validate each alert
+                currentValidated = alerts.map(alert => {
+                    const validation = validateSignal(alert.direction, alert.pivot_level);
+                    return {
+                        ...alert,
+                        validation: validation
+                    };
+                });
+                
+                updateStatus(true, alerts.length);
+                updateFilters(currentValidated);
+                displayAlerts(currentValidated);
+                updateStats(currentValidated);
                 
             } catch (error) {
                 console.error('Error loading alerts:', error);
-                showNoData('Error loading rsi_alerts.json. Check console for details.');
+                showError('Error loading rsi_alerts.json. Check console for details.');
+                updateStatus(false, 0);
             }
         }
         
-        function displayAlerts(alerts) {
-            const symbolFilter = document.getElementById('symbolFilter').value;
-            const directionFilter = document.getElementById('directionFilter').value;
-            const timeframeFilter = document.getElementById('timeframeFilter').value;
+        function showError(message) {
+            const tbody = document.getElementById('alertsBody');
+            tbody.innerHTML = `<tr class="no-data"><td colspan="9">❌ ${message}<br><br>Make sure:<br>1. Bot is running<br>2. rsi_alerts.json exists<br>3. Server is running: python3 -m http.server 8080</td></tr>`;
+            document.getElementById('totalCount').innerText = '0';
+            document.getElementById('validCount').innerText = '0';
+            document.getElementById('invalidCount').innerText = '0';
+            document.getElementById('winRate').innerHTML = '0%';
+        }
+        
+        function updateStatus(connected, alertCount) {
+            const statusSpan = document.getElementById('statusIndicator');
+            const alertCountSpan = document.getElementById('alertCount');
             
-            let filtered = [...alerts];
+            if (connected) {
+                statusSpan.innerHTML = '🟢 Status: <span class="status-online">Connected</span>';
+                alertCountSpan.innerHTML = `Alerts: ${alertCount}`;
+            } else {
+                statusSpan.innerHTML = '🔴 Status: <span class="status-offline">Disconnected</span>';
+                alertCountSpan.innerHTML = `Alerts: --`;
+            }
+            
+            const now = new Date();
+            document.getElementById('lastUpdate').innerHTML = `Last update: ${now.toLocaleTimeString()}`;
+        }
+        
+        function displayAlerts(validatedAlerts) {
+            const symbolFilter = document.getElementById('symbolFilter').value;
+            const signalFilter = document.getElementById('signalFilter').value;
+            
+            let filtered = [...validatedAlerts];
             
             if (symbolFilter !== 'all') {
                 filtered = filtered.filter(a => a.symbol === symbolFilter);
             }
-            if (directionFilter !== 'all') {
-                filtered = filtered.filter(a => a.direction === directionFilter);
-            }
-            if (timeframeFilter !== 'all') {
-                filtered = filtered.filter(a => a.timeframe === timeframeFilter);
+            if (signalFilter === 'valid') {
+                filtered = filtered.filter(a => a.validation.valid === true);
+            } else if (signalFilter === 'invalid') {
+                filtered = filtered.filter(a => a.validation.valid === false);
             }
             
             // Sort by timestamp descending (newest first)
@@ -313,20 +465,31 @@
             const tbody = document.getElementById('alertsBody');
             
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr class="no-data"><td colspan="6">No matching alerts found</td></tr>';
+                tbody.innerHTML = '<tr class="no-data"><td colspan="9">No matching alerts found</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = filtered.map(alert => `
-                <tr>
-                    <td class="timestamp">${alert.timestamp}</td>
-                    <td><strong>${alert.symbol}</strong></td>
-                    <td>${alert.timeframe}</td>
-                    <td class="${alert.direction}">${alert.direction === 'buy' ? '🔵 BUY' : '🔴 SELL'}</td>
-                    <td>${alert.rsi}</td>
-                    <td>${formatPrice(alert.price)}</td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = filtered.map(alert => {
+                const isValid = alert.validation.valid;
+                const rowClass = isValid ? '' : 'rejected';
+                const validityBadge = isValid ? 
+                    '<span class="badge badge-valid">✅ VALID</span>' : 
+                    '<span class="badge badge-invalid">🚫 REJECTED</span>';
+                
+                return `
+                    <tr class="${rowClass}">
+                        <td class="timestamp">${alert.timestamp}</td>
+                        <td><strong>${alert.symbol}</strong></td>
+                        <td>${alert.timeframe}</td>
+                        <td class="${alert.direction}">${alert.direction === 'buy' ? '🔵 BUY' : '🔴 SELL'}</td>
+                        <td>${alert.rsi}</td>
+                        <td>${formatPrice(alert.price)}</td>
+                        <td>${alert.pivot_level || 'N/A'}</td>
+                        <td>${validityBadge}</td>
+                        <td style="font-size: 11px; color: ${isValid ? '#00d4aa' : '#ff6b6b'}">${alert.validation.reason}</td>
+                    </tr>
+                `;
+            }).join('');
         }
         
         function formatPrice(price) {
@@ -337,50 +500,30 @@
             return price.toFixed(2);
         }
         
-        function updateStats(alerts) {
-            document.getElementById('totalCount').innerText = alerts.length;
-            document.getElementById('buyCount').innerText = alerts.filter(a => a.direction === 'buy').length;
-            document.getElementById('sellCount').innerText = alerts.filter(a => a.direction === 'sell').length;
+        function updateStats(validatedAlerts) {
+            const total = validatedAlerts.length;
+            const valid = validatedAlerts.filter(a => a.validation.valid === true).length;
+            const invalid = total - valid;
+            const winRate = total > 0 ? (valid / total * 100).toFixed(1) : 0;
             
-            if (alerts.length > 0) {
-                const last = alerts[alerts.length - 1];
-                document.getElementById('lastAlert').innerHTML = `${last.symbol} ${last.timeframe} → ${last.direction.toUpperCase()}`;
-            } else {
-                document.getElementById('lastAlert').innerHTML = '--';
-            }
-            
-            // Update symbol filter dropdown
-            const symbols = [...new Set(alerts.map(a => a.symbol))];
+            document.getElementById('totalCount').innerText = total;
+            document.getElementById('validCount').innerText = valid;
+            document.getElementById('invalidCount').innerText = invalid;
+            document.getElementById('winRate').innerHTML = `${winRate}%`;
+        }
+        
+        function updateFilters(validatedAlerts) {
+            const symbols = [...new Set(validatedAlerts.map(a => a.symbol))];
             const symbolSelect = document.getElementById('symbolFilter');
             const currentValue = symbolSelect.value;
             
-            if (symbols.length > 0) {
-                symbolSelect.innerHTML = '<option value="all">All (' + symbols.length + ')</option>' +
-                    symbols.map(s => `<option value="${s}">${s}</option>`).join('');
-                symbolSelect.value = currentValue;
-            }
+            symbolSelect.innerHTML = '<option value="all">All (' + symbols.length + ')</option>' +
+                symbols.map(s => `<option value="${s}">${s}</option>`).join('');
+            symbolSelect.value = currentValue;
         }
         
-        function showNoData(message) {
-            document.getElementById('alertsBody').innerHTML = `<tr class="no-data"><td colspan="6">${message}</td></tr>`;
-            document.getElementById('totalCount').innerText = '0';
-            document.getElementById('buyCount').innerText = '0';
-            document.getElementById('sellCount').innerText = '0';
-            document.getElementById('lastAlert').innerHTML = '--';
-        }
-        
-        function clearAlerts() {
-            if (confirm('Clear all alerts from the JSON file? This action cannot be undone.')) {
-                fetch('clear_alerts', { method: 'POST' })
-                    .catch(() => console.log('Manual clearing required - delete rsi_alerts.json manually'));
-                
-                // Clear display
-                showNoData('Alerts cleared. Refresh to see new data.');
-                
-                // Optionally, you can send a request to a server endpoint
-                // For now, we'll just reload
-                setTimeout(() => loadAlerts(), 500);
-            }
+        function refreshData() {
+            loadAlerts();
         }
         
         function startAutoRefresh() {
@@ -392,9 +535,8 @@
         
         // Watch for interval changes
         document.getElementById('refreshInterval').addEventListener('change', startAutoRefresh);
-        document.getElementById('symbolFilter').addEventListener('change', () => loadAlerts());
-        document.getElementById('directionFilter').addEventListener('change', () => loadAlerts());
-        document.getElementById('timeframeFilter').addEventListener('change', () => loadAlerts());
+        document.getElementById('symbolFilter').addEventListener('change', () => displayAlerts(currentValidated));
+        document.getElementById('signalFilter').addEventListener('change', () => displayAlerts(currentValidated));
         
         // Initial load
         loadAlerts();

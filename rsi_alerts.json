@@ -1,32 +1,12 @@
 [
   {
-    "timestamp": "2026-05-31 00:30:48",
-    "symbol": "BTC/USDT",
-    "timeframe": "15m",
-    "direction": "buy",
-    "rsi": 44.48,
-    "price": 73997.1,
-    "pivot_level": "R1",
-    "pivot_distance": 0.4848838670704702
-  },
-  {
-    "timestamp": "2026-05-31 00:31:04",
+    "timestamp": "2026-05-31 00:50:09",
     "symbol": "DOT/USDT",
     "timeframe": "4h",
     "direction": "sell",
-    "rsi": 59.37,
-    "price": 1.203,
+    "rsi": 59.08,
+    "price": 1.2027,
     "pivot_level": "PP",
-    "pivot_distance": 0.10806317539485276
-  },
-  {
-    "timestamp": "2026-05-31 00:35:29",
-    "symbol": "BTC/USDT",
-    "timeframe": "5m",
-    "direction": "sell",
-    "rsi": 56.15,
-    "price": 73988.3,
-    "pivot_level": "R1",
-    "pivot_distance": 0.49683531044774076
+    "pivot_distance": 0.08314625426125483
   }
 ]
