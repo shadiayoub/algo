@@ -18,5 +18,15 @@
     "price": 1.203,
     "pivot_level": "PP",
     "pivot_distance": 0.10806317539485276
+  },
+  {
+    "timestamp": "2026-05-31 00:35:29",
+    "symbol": "BTC/USDT",
+    "timeframe": "5m",
+    "direction": "sell",
+    "rsi": 56.15,
+    "price": 73988.3,
+    "pivot_level": "R1",
+    "pivot_distance": 0.49683531044774076
   }
 ]
