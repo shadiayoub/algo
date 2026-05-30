@@ -1,0 +1,508 @@
+#!/usr/bin/env python3
+"""
+Kraken RSI Alert Bot with Pivot/SR Integration
+Alerts only when RSI zone AND price at key level align
+"""
+
+import ccxt
+import pandas as pd
+import time
+import json
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+
+# ============================================================
+# AUDIO SETUP
+# ============================================================
+
+def play_beep(direction):
+    frequency = 1000 if direction == "buy" else 800
+    duration = 500
+    
+    if sys.platform == "win32":
+        try:
+            import winsound
+            winsound.Beep(frequency, duration)
+        except:
+            print("\a", end="", flush=True)
+    else:
+        print("\a", end="", flush=True)
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+CONFIG = {
+    "exchange": "kraken",
+    
+    "symbols": [
+        "AAVE/USD", "ADA/USDT", "BTC/USDT", "ETH/USDT", "DOT/USDT",
+        # Add your full 62 symbols here
+    ],
+    
+    "timeframes": ["5m", "15m", "1h", "4h"],
+    
+    "rsi_period": 7,
+    "buy_zone_low": 40,
+    "buy_zone_high": 50,
+    "sell_zone_low": 50,
+    "sell_zone_high": 60,
+    
+    # Pivot Settings
+    "enable_pivot_filter": True,  # Set to False to disable pivot checking
+    "pivot_proximity_percent": 0.5,  # 0.5% distance to consider "at level"
+    "pivot_timeframe": "1d",  # Daily pivots
+    
+    "check_interval": 60,
+    "enable_audio": True,
+    "audio_cooldown_seconds": 300,
+    "log_to_file": True,
+    "log_file": "rsi_alerts.log",
+    "candle_limit": 100,
+    "try_usdt_first": True,
+    "try_usd_fallback": True,
+}
+
+# ============================================================
+# PIVOT CALCULATOR
+# ============================================================
+
+class PivotCalculator:
+    """Calculate traditional pivot points from OHLCV data"""
+    
+    @staticmethod
+    def calculate_pivots(high, low, close):
+        """
+        Calculate Traditional Pivot Points
+        Returns: (PP, R1, R2, R3, S1, S2, S3)
+        """
+        pp = (high + low + close) / 3
+        r1 = (2 * pp) - low
+        r2 = pp + (high - low)
+        r3 = high + 2 * (pp - low)
+        s1 = (2 * pp) - high
+        s2 = pp - (high - low)
+        s3 = low - 2 * (high - pp)
+        
+        return {
+            "PP": pp,
+            "R1": r1, "R2": r2, "R3": r3,
+            "S1": s1, "S2": s2, "S3": s3
+        }
+    
+    @staticmethod
+    def is_near_level(price, level, proximity_percent):
+        """Check if price is within X% of a level"""
+        if level == 0 or level is None:
+            return False
+        distance = abs(price - level) / price * 100
+        return distance <= proximity_percent
+    
+    @staticmethod
+    def get_nearest_level(price, pivots, proximity_percent):
+        """Return the nearest pivot level if within proximity"""
+        levels = {
+            "R3": pivots["R3"], "R2": pivots["R2"], "R1": pivots["R1"],
+            "PP": pivots["PP"],
+            "S1": pivots["S1"], "S2": pivots["S2"], "S3": pivots["S3"]
+        }
+        
+        nearest = None
+        min_distance = float('inf')
+        
+        for name, level in levels.items():
+            if level is None:
+                continue
+            distance = abs(price - level) / price * 100
+            if distance <= proximity_percent and distance < min_distance:
+                min_distance = distance
+                nearest = name
+        
+        return nearest, min_distance
+
+# ============================================================
+# ALERT MANAGER WITH PIVOT DATA
+# ============================================================
+
+class AlertManager:
+    def __init__(self, config):
+        self.config = config
+        self.last_alert = {}
+        self.alert_history = []
+        self.alert_file = "rsi_alerts.json"
+        
+    def export_alerts(self):
+        try:
+            with open(self.alert_file, "w") as f:
+                json.dump(self.alert_history, f, indent=2)
+        except Exception as e:
+            pass
+    
+    def should_alert(self, symbol, timeframe, direction):
+        key = f"{symbol}_{timeframe}_{direction}"
+        now = time.time()
+        
+        if key in self.last_alert:
+            if now - self.last_alert[key] < self.config["audio_cooldown_seconds"]:
+                return False
+        
+        self.last_alert[key] = now
+        return True
+    
+    def send_alert(self, symbol, timeframe, direction, rsi_value, price, 
+                   actual_symbol=None, pivot_info=None):
+        if not self.should_alert(symbol, timeframe, direction):
+            return
+        
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        display_symbol = actual_symbol if actual_symbol else symbol
+        
+        # Build pivot context string
+        pivot_str = ""
+        if pivot_info and pivot_info.get("nearest_level"):
+            pivot_str = f" | 📍 At {pivot_info['nearest_level']} ({pivot_info['distance']:.2f}%)"
+        
+        # Create alert record
+        alert_record = {
+            "timestamp": timestamp,
+            "symbol": display_symbol,
+            "timeframe": timeframe,
+            "direction": direction,
+            "rsi": round(rsi_value, 2),
+            "price": price,
+            "pivot_level": pivot_info.get("nearest_level") if pivot_info else None,
+            "pivot_distance": pivot_info.get("distance") if pivot_info else None
+        }
+        
+        self.alert_history.append(alert_record)
+        if len(self.alert_history) > 1000:
+            self.alert_history.pop(0)
+        
+        self.export_alerts()
+        
+        # Console output with pivot info
+        if direction == "buy":
+            message = f"[{timestamp}] 🔵 BUY ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}"
+        else:
+            message = f"[{timestamp}] 🔴 SELL ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}"
+        
+        print(message)
+        
+        if self.config["log_to_file"]:
+            with open(self.config["log_file"], "a") as f:
+                f.write(message + "\n")
+        
+        if self.config["enable_audio"]:
+            play_beep(direction)
+
+# ============================================================
+# RSI CALCULATION
+# ============================================================
+
+def calculate_rsi(prices, period=14):
+    if len(prices) < period + 1:
+        return None
+    
+    series = pd.Series(prices)
+    delta = series.diff()
+    
+    gain = delta.where(delta > 0, 0)
+    loss = -delta.where(delta < 0, 0)
+    
+    avg_gain = gain.rolling(window=period, min_periods=period).mean()
+    avg_loss = loss.rolling(window=period, min_periods=period).mean()
+    
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
+    
+    return rsi.iloc[-1]
+
+# ============================================================
+# EXCHANGE CLIENT
+# ============================================================
+
+class ExchangeClient:
+    def __init__(self, exchange_name, config):
+        self.config = config
+        self.exchange = self._create_exchange(exchange_name)
+        self.symbol_cache = {}
+        self.pivot_cache = {}  # Cache pivots per symbol (refreshed daily)
+        self.last_pivot_date = {}
+        
+    def _create_exchange(self, name):
+        exchange_map = {
+            "kraken": ccxt.kraken,
+            "binance": ccxt.binance,
+            "bybit": ccxt.bybit,
+            "coinbase": ccxt.coinbase,
+            "okx": ccxt.okx,
+        }
+        
+        if name not in exchange_map:
+            raise ValueError(f"Unsupported exchange: {name}")
+        
+        exchange = exchange_map[name]({
+            'enableRateLimit': True,
+            'options': {'defaultType': 'spot'}
+        })
+        
+        return exchange
+    
+    def get_daily_pivots(self, symbol, actual_symbol):
+        """Get daily pivot levels for a symbol"""
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        # Check cache for today
+        if symbol in self.pivot_cache and self.last_pivot_date.get(symbol) == today:
+            return self.pivot_cache[symbol]
+        
+        try:
+            # Fetch daily OHLCV for pivot calculation
+            ohlcv = self.exchange.fetch_ohlcv(actual_symbol, timeframe="1d", limit=2)
+            if ohlcv and len(ohlcv) >= 2:
+                yesterday = ohlcv[-2]
+                high = yesterday[2]
+                low = yesterday[3]
+                close = yesterday[4]
+                
+                pivots = PivotCalculator.calculate_pivots(high, low, close)
+                self.pivot_cache[symbol] = pivots
+                self.last_pivot_date[symbol] = today
+                return pivots
+        except Exception as e:
+            pass
+        
+        return None
+    
+    def get_or_discover_symbol(self, original_symbol, timeframe, limit):
+        if '/' not in original_symbol:
+            return original_symbol, False
+        
+        base, quote = original_symbol.split('/')
+        
+        if base in self.symbol_cache:
+            cached_data = self.symbol_cache[base]
+            return cached_data["actual_symbol"], not cached_data.get("notified", False)
+        
+        attempts = []
+        if self.config.get("try_usdt_first", True):
+            if quote != "USDT":
+                attempts.append(("USDT", f"{base}/USDT"))
+            attempts.append((quote, original_symbol))
+            if self.config.get("try_usd_fallback", True) and quote != "USD":
+                attempts.append(("USD", f"{base}/USD"))
+        else:
+            attempts.append((quote, original_symbol))
+            alt_quote = "USD" if quote == "USDT" else "USDT"
+            if self.config.get("try_usd_fallback", True):
+                attempts.append((alt_quote, f"{base}/{alt_quote}"))
+        
+        for attempt_quote, attempt_symbol in attempts:
+            try:
+                ohlcv = self.exchange.fetch_ohlcv(attempt_symbol, timeframe=timeframe, limit=limit)
+                if ohlcv and len(ohlcv) > 0:
+                    self.symbol_cache[base] = {
+                        "actual_symbol": attempt_symbol,
+                        "notified": False
+                    }
+                    return attempt_symbol, True
+            except:
+                continue
+        
+        self.symbol_cache[base] = {
+            "actual_symbol": original_symbol,
+            "notified": True
+        }
+        return original_symbol, False
+    
+    def mark_notified(self, original_symbol):
+        base = original_symbol.split('/')[0] if '/' in original_symbol else original_symbol
+        if base in self.symbol_cache:
+            self.symbol_cache[base]["notified"] = True
+    
+    def fetch_ohlcv_with_fallback(self, original_symbol, timeframe, limit=100):
+        actual_symbol, should_notify = self.get_or_discover_symbol(original_symbol, timeframe, limit)
+        
+        if should_notify and actual_symbol != original_symbol:
+            print(f"  ℹ️  {original_symbol} → using {actual_symbol}")
+            self.mark_notified(original_symbol)
+        
+        try:
+            ohlcv = self.exchange.fetch_ohlcv(actual_symbol, timeframe=timeframe, limit=limit)
+            if ohlcv and len(ohlcv) > 0:
+                closes = [candle[4] for candle in ohlcv]
+                current_price = closes[-1] if closes else None
+                return {
+                    "prices": closes,
+                    "current_price": current_price,
+                    "actual_symbol": actual_symbol
+                }
+        except:
+            pass
+        
+        return None
+
+# ============================================================
+# MAIN BOT WITH PIVOT INTEGRATION
+# ============================================================
+
+class KrakenRSIBot:
+    def __init__(self, config):
+        self.config = config
+        self.exchange = ExchangeClient(config["exchange"], config)
+        self.alert_manager = AlertManager(config)
+        self.last_rsi = {}
+        
+    def check_rsi_zone(self, rsi_value):
+        buy_zone = (self.config["buy_zone_low"] <= rsi_value <= self.config["buy_zone_high"])
+        sell_zone = (self.config["sell_zone_low"] <= rsi_value <= self.config["sell_zone_high"])
+        
+        if buy_zone:
+            return "buy"
+        elif sell_zone:
+            return "sell"
+        return None
+    
+    def get_state_key(self, symbol, timeframe):
+        return f"{symbol}_{timeframe}"
+    
+    def should_alert_state_change(self, key, new_zone):
+        last_zone = self.last_rsi.get(key)
+        
+        if new_zone is not None and new_zone != last_zone:
+            self.last_rsi[key] = new_zone
+            return True
+        elif new_zone is None:
+            self.last_rsi[key] = None
+        
+        return False
+    
+    def check_pivot_alignment(self, symbol, actual_symbol, current_price, direction):
+        """Check if price is aligned with appropriate pivot level for the trade direction"""
+        if not self.config["enable_pivot_filter"]:
+            return None, True  # No filter, always allowed
+        
+        pivots = self.exchange.get_daily_pivots(symbol, actual_symbol)
+        if not pivots:
+            return None, True  # No pivot data, allow alert
+        
+        proximity = self.config["pivot_proximity_percent"]
+        
+        if direction == "buy":
+            # Buy: Look for price near PP, S1, or S2
+            favorable_levels = ["PP", "S1", "S2"]
+            for level in favorable_levels:
+                level_price = pivots.get(level)
+                if level_price and PivotCalculator.is_near_level(current_price, level_price, proximity):
+                    distance = abs(current_price - level_price) / current_price * 100
+                    return {"nearest_level": level, "distance": distance}, True
+        
+        elif direction == "sell":
+            # Sell: Look for price near PP, R1, or R2
+            favorable_levels = ["PP", "R1", "R2"]
+            for level in favorable_levels:
+                level_price = pivots.get(level)
+                if level_price and PivotCalculator.is_near_level(current_price, level_price, proximity):
+                    distance = abs(current_price - level_price) / current_price * 100
+                    return {"nearest_level": level, "distance": distance}, True
+        
+        # Also check if price is near ANY level (for awareness, not filtering)
+        nearest, distance = PivotCalculator.get_nearest_level(current_price, pivots, proximity)
+        if nearest:
+            return {"nearest_level": nearest, "distance": distance}, True
+        
+        return None, False  # Not near any pivot level
+    
+    def run_once(self):
+        print(f"\n{'='*60}")
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Checking {len(self.config['symbols'])} symbols")
+        print(f"{'='*60}")
+        
+        for original_symbol in self.config["symbols"]:
+            for timeframe in self.config["timeframes"]:
+                result = self.exchange.fetch_ohlcv_with_fallback(
+                    original_symbol, timeframe, self.config["candle_limit"]
+                )
+                
+                if result is None or len(result["prices"]) < self.config["rsi_period"] + 1:
+                    continue
+                
+                rsi = calculate_rsi(result["prices"], self.config["rsi_period"])
+                
+                if rsi is None:
+                    continue
+                
+                zone = self.check_rsi_zone(rsi)
+                key = self.get_state_key(original_symbol, timeframe)
+                
+                # Check pivot alignment if zone is active
+                pivot_info = None
+                pivot_allowed = True
+                
+                if zone and self.config["enable_pivot_filter"]:
+                    pivot_info, pivot_allowed = self.check_pivot_alignment(
+                        original_symbol, result["actual_symbol"], 
+                        result["current_price"], zone
+                    )
+                
+                # Only alert if RSI zone AND (pivot filter disabled OR pivot aligned)
+                if self.should_alert_state_change(key, zone) and pivot_allowed:
+                    self.alert_manager.send_alert(
+                        symbol=original_symbol,
+                        timeframe=timeframe,
+                        direction=zone,
+                        rsi_value=rsi,
+                        price=result["current_price"],
+                        actual_symbol=result["actual_symbol"],
+                        pivot_info=pivot_info
+                    )
+                
+                zone_str = zone.upper() if zone else "---"
+                display = result["actual_symbol"] if result["actual_symbol"] != original_symbol else original_symbol
+                
+                # Show pivot info in console if available
+                pivot_display = ""
+                if pivot_info and pivot_info.get("nearest_level"):
+                    pivot_display = f" | 📍 {pivot_info['nearest_level']}"
+                
+                print(f"  {display:12} {timeframe:4} | RSI: {rsi:6.2f} | Zone: {zone_str:4} | Price: {result['current_price']}{pivot_display}")
+        
+        print(f"Next check in {self.config['check_interval']} seconds...")
+    
+    def run(self):
+        print("\n" + "="*60)
+        print("KRAKEN RSI ALERT BOT (with Pivot/SR Integration)")
+        print("="*60)
+        print(f"Exchange: {self.config['exchange']}")
+        print(f"Symbols: {len(self.config['symbols'])} pairs configured")
+        print(f"Timeframes: {', '.join(self.config['timeframes'])}")
+        print(f"Buy Zone: {self.config['buy_zone_low']} - {self.config['buy_zone_high']}")
+        print(f"Sell Zone: {self.config['sell_zone_low']} - {self.config['sell_zone_high']}")
+        print(f"Pivot Filter: {'ON' if self.config['enable_pivot_filter'] else 'OFF'}")
+        print(f"Pivot Proximity: {self.config['pivot_proximity_percent']}%")
+        print(f"Check Interval: {self.config['check_interval']} seconds")
+        print(f"Audio Alerts: {'ON' if self.config['enable_audio'] else 'OFF'}")
+        print("="*60)
+        print("\nBot running. Press Ctrl+C to stop.\n")
+        
+        try:
+            while True:
+                self.run_once()
+                time.sleep(self.config["check_interval"])
+        except KeyboardInterrupt:
+            print("\n\nBot stopped by user.")
+
+# ============================================================
+# ENTRY POINT
+# ============================================================
+
+if __name__ == "__main__":
+    config_file = Path("config.json")
+    if config_file.exists():
+        with open(config_file, "r") as f:
+            user_config = json.load(f)
+            CONFIG.update(user_config)
+    
+    bot = KrakenRSIBot(CONFIG)
+    bot.run()

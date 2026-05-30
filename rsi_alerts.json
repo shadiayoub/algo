@@ -1,178 +1,22 @@
 [
   {
-    "timestamp": "2026-05-31 00:21:17",
-    "symbol": "AIXBT/USD",
-    "timeframe": "1h",
-    "direction": "buy",
-    "rsi": 40.68,
-    "price": 0.02853
-  },
-  {
-    "timestamp": "2026-05-31 00:21:20",
-    "symbol": "ALGO/USDT",
-    "timeframe": "5m",
-    "direction": "sell",
-    "rsi": 52.56,
-    "price": 0.1274
-  },
-  {
-    "timestamp": "2026-05-31 00:21:22",
-    "symbol": "ALGO/USDT",
-    "timeframe": "15m",
-    "direction": "buy",
-    "rsi": 40.71,
-    "price": 0.1274
-  },
-  {
-    "timestamp": "2026-05-31 00:21:36",
-    "symbol": "APT/USD",
-    "timeframe": "1h",
-    "direction": "sell",
-    "rsi": 57.14,
-    "price": 0.9455
-  },
-  {
-    "timestamp": "2026-05-31 00:21:51",
-    "symbol": "ARB/USD",
-    "timeframe": "1h",
-    "direction": "buy",
-    "rsi": 41.18,
-    "price": 0.1049
-  },
-  {
-    "timestamp": "2026-05-31 00:22:04",
-    "symbol": "ATOM/USDT",
-    "timeframe": "4h",
-    "direction": "buy",
-    "rsi": 46.65,
-    "price": 2.034
-  },
-  {
-    "timestamp": "2026-05-31 00:22:13",
-    "symbol": "BCH/USDT",
-    "timeframe": "15m",
-    "direction": "sell",
-    "rsi": 53.76,
-    "price": 306.99
-  },
-  {
-    "timestamp": "2026-05-31 00:22:14",
-    "symbol": "BCH/USDT",
-    "timeframe": "1h",
-    "direction": "sell",
-    "rsi": 56.49,
-    "price": 306.99
-  },
-  {
-    "timestamp": "2026-05-31 00:22:24",
-    "symbol": "BONK/USD",
-    "timeframe": "5m",
-    "direction": "buy",
-    "rsi": 41.67,
-    "price": 5.478e-06
-  },
-  {
-    "timestamp": "2026-05-31 00:22:28",
-    "symbol": "BONK/USD",
-    "timeframe": "4h",
-    "direction": "sell",
-    "rsi": 57.58,
-    "price": 5.478e-06
-  },
-  {
-    "timestamp": "2026-05-31 00:22:31",
+    "timestamp": "2026-05-31 00:30:48",
     "symbol": "BTC/USDT",
     "timeframe": "15m",
     "direction": "buy",
-    "rsi": 44.56,
-    "price": 73988.0
+    "rsi": 44.48,
+    "price": 73997.1,
+    "pivot_level": "R1",
+    "pivot_distance": 0.4848838670704702
   },
   {
-    "timestamp": "2026-05-31 00:22:36",
-    "symbol": "CRV/USD",
-    "timeframe": "5m",
-    "direction": "buy",
-    "rsi": 50.0,
-    "price": 0.2164
-  },
-  {
-    "timestamp": "2026-05-31 00:22:38",
-    "symbol": "CRV/USD",
-    "timeframe": "1h",
-    "direction": "sell",
-    "rsi": 52.0,
-    "price": 0.2164
-  },
-  {
-    "timestamp": "2026-05-31 00:22:46",
-    "symbol": "DOGE/USDT",
-    "timeframe": "1h",
-    "direction": "sell",
-    "rsi": 55.93,
-    "price": 0.10132
-  },
-  {
-    "timestamp": "2026-05-31 00:22:57",
+    "timestamp": "2026-05-31 00:31:04",
     "symbol": "DOT/USDT",
     "timeframe": "4h",
     "direction": "sell",
-    "rsi": 57.96,
-    "price": 1.2016
-  },
-  {
-    "timestamp": "2026-05-31 00:22:58",
-    "symbol": "ETC/USD",
-    "timeframe": "5m",
-    "direction": "sell",
-    "rsi": 57.14,
-    "price": 8.242
-  },
-  {
-    "timestamp": "2026-05-31 00:23:04",
-    "symbol": "ETC/USD",
-    "timeframe": "1h",
-    "direction": "buy",
-    "rsi": 43.56,
-    "price": 8.242
-  },
-  {
-    "timestamp": "2026-05-31 00:23:17",
-    "symbol": "FARTCOIN/USDT",
-    "timeframe": "1h",
-    "direction": "sell",
-    "rsi": 60.0,
-    "price": 0.1625
-  },
-  {
-    "timestamp": "2026-05-31 00:23:19",
-    "symbol": "FARTCOIN/USDT",
-    "timeframe": "4h",
-    "direction": "sell",
-    "rsi": 55.71,
-    "price": 0.1625
-  },
-  {
-    "timestamp": "2026-05-31 00:23:34",
-    "symbol": "GRASS/USD",
-    "timeframe": "15m",
-    "direction": "buy",
-    "rsi": 46.46,
-    "price": 0.5082
-  },
-  {
-    "timestamp": "2026-05-31 00:23:55",
-    "symbol": "HYPE/USD",
-    "timeframe": "15m",
-    "direction": "buy",
-    "rsi": 47.4,
-    "price": 67.65
-  },
-  {
-    "timestamp": "2026-05-31 00:23:56",
-    "symbol": "HYPE/USD",
-    "timeframe": "1h",
-    "direction": "buy",
-    "rsi": 44.59,
-    "price": 67.65
+    "rsi": 59.37,
+    "price": 1.203,
+    "pivot_level": "PP",
+    "pivot_distance": 0.10806317539485276
   }
 ]
