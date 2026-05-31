@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # RSI Alert Bot
   rsi-bot:
-    image: python:3.9-slim
+    build: .  # This builds using your Dockerfile
     container_name: rsi-alert-bot
     working_dir: /app
     volumes:
