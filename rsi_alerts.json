@@ -1,5 +1,995 @@
 [
   {
+    "timestamp": "2026-05-31 16:33:08",
+    "symbol": "POPCAT/USDT:USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 48.46,
+    "price": 0.05081,
+    "pivot_level": "S2",
+    "pivot_distance": 0.24
+  },
+  {
+    "timestamp": "2026-05-31 16:32:46",
+    "symbol": "KAITO/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 43.33,
+    "price": 0.4615,
+    "pivot_level": "PP",
+    "pivot_distance": 0.48
+  },
+  {
+    "timestamp": "2026-05-31 16:32:36",
+    "symbol": "FLOKI/USDT",
+    "timeframe": "4h",
+    "direction": "buy",
+    "rsi": 49.51,
+    "price": 2.809e-05,
+    "pivot_level": "PP",
+    "pivot_distance": 0.25
+  },
+  {
+    "timestamp": "2026-05-31 16:32:28",
+    "symbol": "DOT/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 35.29,
+    "price": 1.168,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:32:26",
+    "symbol": "CRV/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 45.16,
+    "price": 0.2125,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:32:12",
+    "symbol": "APT/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 47.06,
+    "price": 0.92,
+    "pivot_level": "S1",
+    "pivot_distance": 0.4
+  },
+  {
+    "timestamp": "2026-05-31 16:31:39",
+    "symbol": "VIRTUAL/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 46.59,
+    "price": 0.7047,
+    "pivot_level": "S1",
+    "pivot_distance": 0.22
+  },
+  {
+    "timestamp": "2026-05-31 16:31:34",
+    "symbol": "TRUMP/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 59.37,
+    "price": 1.983,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:31:33",
+    "symbol": "TON/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 47.62,
+    "price": 1.879,
+    "pivot_level": "R1",
+    "pivot_distance": 0.07
+  },
+  {
+    "timestamp": "2026-05-31 16:31:16",
+    "symbol": "POL/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 40.63,
+    "price": 0.09021,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:31:14",
+    "symbol": "PEPE/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 3.38e-06,
+    "pivot_level": "S1",
+    "pivot_distance": 0.39
+  },
+  {
+    "timestamp": "2026-05-31 16:31:13",
+    "symbol": "PEPE/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 3.38e-06,
+    "pivot_level": "S1",
+    "pivot_distance": 0.39
+  },
+  {
+    "timestamp": "2026-05-31 16:30:38",
+    "symbol": "ETC/USDT",
+    "timeframe": "5m",
+    "direction": "sell",
+    "rsi": 33.33,
+    "price": 8.09,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:30:37",
+    "symbol": "DOT/USDT",
+    "timeframe": "5m",
+    "direction": "sell",
+    "rsi": 36.36,
+    "price": 1.17,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:30:36",
+    "symbol": "DOGE/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 26.8,
+    "price": 0.09958,
+    "pivot_level": "S1",
+    "pivot_distance": 0.12
+  },
+  {
+    "timestamp": "2026-05-31 16:30:33",
+    "symbol": "CRV/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 44.44,
+    "price": 0.2129,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:30:31",
+    "symbol": "BONK/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 57.14,
+    "price": 5.42e-06,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:30:31",
+    "symbol": "BONK/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 44.44,
+    "price": 5.42e-06,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:30:19",
+    "symbol": "APT/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 0.922,
+    "pivot_level": "S1",
+    "pivot_distance": 0.18
+  },
+  {
+    "timestamp": "2026-05-31 16:30:14",
+    "symbol": "ADA/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 42.31,
+    "price": 0.2334,
+    "pivot_level": "S1",
+    "pivot_distance": 0.31
+  },
+  {
+    "timestamp": "2026-05-31 16:30:12",
+    "symbol": "XAG/USDT:USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 45.45,
+    "price": 75.35,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:29:43",
+    "symbol": "TRX/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 41.18,
+    "price": 0.349,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:29:42",
+    "symbol": "TRX/USDT",
+    "timeframe": "5m",
+    "direction": "sell",
+    "rsi": 55.56,
+    "price": 0.349,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:28:28",
+    "symbol": "APT/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 53.33,
+    "price": 0.921,
+    "pivot_level": "S1",
+    "pivot_distance": 0.29
+  },
+  {
+    "timestamp": "2026-05-31 16:28:24",
+    "symbol": "ADA/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 12.0,
+    "price": 0.2335,
+    "pivot_level": "S1",
+    "pivot_distance": 0.36
+  },
+  {
+    "timestamp": "2026-05-31 16:28:04",
+    "symbol": "ZEC/USDT",
+    "timeframe": "4h",
+    "direction": "buy",
+    "rsi": 65.83,
+    "price": 546.02,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:28:01",
+    "symbol": "XRP/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 41.07,
+    "price": 1.3272,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:27:53",
+    "symbol": "TRX/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 45.45,
+    "price": 0.3489,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:27:52",
+    "symbol": "TRX/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 0.3489,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:27:44",
+    "symbol": "STX/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 40.48,
+    "price": 0.2323,
+    "pivot_level": "S1",
+    "pivot_distance": 0.22
+  },
+  {
+    "timestamp": "2026-05-31 16:27:41",
+    "symbol": "SHIB/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 20.0,
+    "price": 5.44e-06,
+    "pivot_level": "S1",
+    "pivot_distance": 0.31
+  },
+  {
+    "timestamp": "2026-05-31 16:27:41",
+    "symbol": "SHIB/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 20.0,
+    "price": 5.44e-06,
+    "pivot_level": "S1",
+    "pivot_distance": 0.31
+  },
+  {
+    "timestamp": "2026-05-31 16:27:39",
+    "symbol": "S/USDT",
+    "timeframe": "5m",
+    "direction": "sell",
+    "rsi": 36.54,
+    "price": 0.03962,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:27:34",
+    "symbol": "POL/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 57.29,
+    "price": 0.09023,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:27:29",
+    "symbol": "PENGU/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 41.72,
+    "price": 0.007814,
+    "pivot_level": "S1",
+    "pivot_distance": 0.3
+  },
+  {
+    "timestamp": "2026-05-31 16:27:27",
+    "symbol": "ORDI/USDT",
+    "timeframe": "5m",
+    "direction": "sell",
+    "rsi": 34.09,
+    "price": 3.326,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:27:20",
+    "symbol": "LTC/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 3.7,
+    "price": 51.74,
+    "pivot_level": "S1",
+    "pivot_distance": 0.36
+  },
+  {
+    "timestamp": "2026-05-31 16:27:12",
+    "symbol": "JUP/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 55.0,
+    "price": 0.1825,
+    "pivot_level": "S1",
+    "pivot_distance": 0.27
+  },
+  {
+    "timestamp": "2026-05-31 16:27:12",
+    "symbol": "JUP/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 47.37,
+    "price": 0.1825,
+    "pivot_level": "S1",
+    "pivot_distance": 0.27
+  },
+  {
+    "timestamp": "2026-05-31 16:27:03",
+    "symbol": "FLOKI/USDT",
+    "timeframe": "4h",
+    "direction": "sell",
+    "rsi": 50.17,
+    "price": 2.813e-05,
+    "pivot_level": "PP",
+    "pivot_distance": 0.11
+  },
+  {
+    "timestamp": "2026-05-31 16:27:00",
+    "symbol": "FARTCOIN/USDT:USDT",
+    "timeframe": "5m",
+    "direction": "sell",
+    "rsi": 30.77,
+    "price": 0.1566,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:26:59",
+    "symbol": "ETH/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 40.41,
+    "price": 2005.98,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:26:57",
+    "symbol": "ETC/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 50.0,
+    "price": 8.09,
+    "pivot_level": "S1",
+    "pivot_distance": 0.49
+  },
+  {
+    "timestamp": "2026-05-31 16:26:53",
+    "symbol": "CRV/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 51.72,
+    "price": 0.2128,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:26:47",
+    "symbol": "BCH/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 42.11,
+    "price": 299.0,
+    "pivot_level": "S1",
+    "pivot_distance": 0.46
+  },
+  {
+    "timestamp": "2026-05-31 16:26:44",
+    "symbol": "ATOM/USDT",
+    "timeframe": "5m",
+    "direction": "sell",
+    "rsi": 35.29,
+    "price": 1.942,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:26:32",
+    "symbol": "XAU/USDT:USDT",
+    "timeframe": "4h",
+    "direction": "buy",
+    "rsi": 49.91,
+    "price": 4543.11,
+    "pivot_level": "PP",
+    "pivot_distance": 0.06
+  },
+  {
+    "timestamp": "2026-05-31 16:26:15",
+    "symbol": "ZEC/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 47.41,
+    "price": 544.42,
+    "pivot_level": "R1",
+    "pivot_distance": 0.36
+  },
+  {
+    "timestamp": "2026-05-31 16:26:13",
+    "symbol": "XRP/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 23.39,
+    "price": 1.3259,
+    "pivot_level": "S1",
+    "pivot_distance": 0.15
+  },
+  {
+    "timestamp": "2026-05-31 16:26:12",
+    "symbol": "XRP/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 24.73,
+    "price": 1.3258,
+    "pivot_level": "S1",
+    "pivot_distance": 0.14
+  },
+  {
+    "timestamp": "2026-05-31 16:26:04",
+    "symbol": "VIRTUAL/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 51.19,
+    "price": 0.7059,
+    "pivot_level": "S1",
+    "pivot_distance": 0.39
+  },
+  {
+    "timestamp": "2026-05-31 16:26:00",
+    "symbol": "UNI/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 38.0,
+    "price": 2.975,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:25:55",
+    "symbol": "TON/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 1.881,
+    "pivot_level": "R1",
+    "pivot_distance": 0.18
+  },
+  {
+    "timestamp": "2026-05-31 16:25:52",
+    "symbol": "TIA/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 37.25,
+    "price": 0.3909,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:25:50",
+    "symbol": "TAO/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 32.69,
+    "price": 251.3,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:25:49",
+    "symbol": "SUI/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 34.95,
+    "price": 0.8724,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:25:47",
+    "symbol": "STX/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 41.25,
+    "price": 0.2321,
+    "pivot_level": "S1",
+    "pivot_distance": 0.3
+  },
+  {
+    "timestamp": "2026-05-31 16:25:45",
+    "symbol": "SOL/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 8.59,
+    "price": 81.69,
+    "pivot_level": "S1",
+    "pivot_distance": 0.38
+  },
+  {
+    "timestamp": "2026-05-31 16:25:45",
+    "symbol": "SOL/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 28.0,
+    "price": 81.69,
+    "pivot_level": "S1",
+    "pivot_distance": 0.38
+  },
+  {
+    "timestamp": "2026-05-31 16:25:42",
+    "symbol": "S/USDT",
+    "timeframe": "4h",
+    "direction": "sell",
+    "rsi": 33.33,
+    "price": 0.03954,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:25:41",
+    "symbol": "S/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 39.47,
+    "price": 0.03954,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:25:36",
+    "symbol": "POPCAT/USDT:USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 55.81,
+    "price": 0.05083,
+    "pivot_level": "S2",
+    "pivot_distance": 0.2
+  },
+  {
+    "timestamp": "2026-05-31 16:25:34",
+    "symbol": "POL/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 48.48,
+    "price": 0.09006,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:25:33",
+    "symbol": "PNUT/USDT",
+    "timeframe": "4h",
+    "direction": "sell",
+    "rsi": 34.21,
+    "price": 0.0513,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:25:23",
+    "symbol": "OP/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 42.31,
+    "price": 0.1165,
+    "pivot_level": "S2",
+    "pivot_distance": 0.49
+  },
+  {
+    "timestamp": "2026-05-31 16:25:21",
+    "symbol": "ONDO/USDT",
+    "timeframe": "1h",
+    "direction": "sell",
+    "rsi": 33.17,
+    "price": 0.3548,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:25:16",
+    "symbol": "LTC/USDT",
+    "timeframe": "4h",
+    "direction": "buy",
+    "rsi": 24.29,
+    "price": 51.67,
+    "pivot_level": "S1",
+    "pivot_distance": 0.5
+  },
+  {
+    "timestamp": "2026-05-31 16:25:16",
+    "symbol": "LTC/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 13.13,
+    "price": 51.67,
+    "pivot_level": "S1",
+    "pivot_distance": 0.5
+  },
+  {
+    "timestamp": "2026-05-31 16:25:16",
+    "symbol": "LTC/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 26.56,
+    "price": 51.67,
+    "pivot_level": "S1",
+    "pivot_distance": 0.5
+  },
+  {
+    "timestamp": "2026-05-31 16:25:09",
+    "symbol": "LDO/USDT",
+    "timeframe": "4h",
+    "direction": "buy",
+    "rsi": 45.34,
+    "price": 0.3199,
+    "pivot_level": "S1",
+    "pivot_distance": 0.36
+  },
+  {
+    "timestamp": "2026-05-31 16:25:05",
+    "symbol": "JUP/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 0.1821,
+    "pivot_level": "S1",
+    "pivot_distance": 0.05
+  },
+  {
+    "timestamp": "2026-05-31 16:25:01",
+    "symbol": "IP/USDT:USDT",
+    "timeframe": "4h",
+    "direction": "sell",
+    "rsi": 37.08,
+    "price": 0.4262,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:25:01",
+    "symbol": "IP/USDT:USDT",
+    "timeframe": "1h",
+    "direction": "sell",
+    "rsi": 38.56,
+    "price": 0.4262,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:24:51",
+    "symbol": "FLOKI/USDT",
+    "timeframe": "4h",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 2.812e-05,
+    "pivot_level": "PP",
+    "pivot_distance": 0.14
+  },
+  {
+    "timestamp": "2026-05-31 16:24:50",
+    "symbol": "FLOKI/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 46.94,
+    "price": 2.812e-05,
+    "pivot_level": "PP",
+    "pivot_distance": 0.14
+  },
+  {
+    "timestamp": "2026-05-31 16:24:45",
+    "symbol": "ETH/USDT",
+    "timeframe": "4h",
+    "direction": "buy",
+    "rsi": 27.2,
+    "price": 2004.62,
+    "pivot_level": "S1",
+    "pivot_distance": 0.05
+  },
+  {
+    "timestamp": "2026-05-31 16:24:45",
+    "symbol": "ETH/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 18.08,
+    "price": 2004.61,
+    "pivot_level": "S1",
+    "pivot_distance": 0.05
+  },
+  {
+    "timestamp": "2026-05-31 16:24:45",
+    "symbol": "ETH/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 16.77,
+    "price": 2004.61,
+    "pivot_level": "S1",
+    "pivot_distance": 0.05
+  },
+  {
+    "timestamp": "2026-05-31 16:24:40",
+    "symbol": "DOGE/USDT",
+    "timeframe": "4h",
+    "direction": "buy",
+    "rsi": 27.4,
+    "price": 0.09968,
+    "pivot_level": "S1",
+    "pivot_distance": 0.22
+  },
+  {
+    "timestamp": "2026-05-31 16:24:40",
+    "symbol": "DOGE/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 20.67,
+    "price": 0.09969,
+    "pivot_level": "S1",
+    "pivot_distance": 0.23
+  },
+  {
+    "timestamp": "2026-05-31 16:24:39",
+    "symbol": "DOGE/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 28.79,
+    "price": 0.09968,
+    "pivot_level": "S1",
+    "pivot_distance": 0.22
+  },
+  {
+    "timestamp": "2026-05-31 16:24:37",
+    "symbol": "CRV/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 0.2127,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:24:37",
+    "symbol": "CRV/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 26.32,
+    "price": 0.2127,
+    "pivot_level": "S1",
+    "pivot_distance": 0.11
+  },
+  {
+    "timestamp": "2026-05-31 16:24:36",
+    "symbol": "BTC/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 26.0,
+    "price": 73566.58,
+    "pivot_level": "PP",
+    "pivot_distance": 0.25
+  },
+  {
+    "timestamp": "2026-05-31 16:24:36",
+    "symbol": "BTC/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 43.43,
+    "price": 73566.58,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:24:35",
+    "symbol": "BTC/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 29.8,
+    "price": 73566.58,
+    "pivot_level": "PP",
+    "pivot_distance": 0.25
+  },
+  {
+    "timestamp": "2026-05-31 16:24:29",
+    "symbol": "BCH/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 45.45,
+    "price": 298.8,
+    "pivot_level": "S1",
+    "pivot_distance": 0.39
+  },
+  {
+    "timestamp": "2026-05-31 16:24:28",
+    "symbol": "AVAX/USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 21.59,
+    "price": 8.859,
+    "pivot_level": "S1",
+    "pivot_distance": 0.41
+  },
+  {
+    "timestamp": "2026-05-31 16:24:27",
+    "symbol": "AVAX/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 41.35,
+    "price": 8.859,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:24:27",
+    "symbol": "AVAX/USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 25.33,
+    "price": 8.859,
+    "pivot_level": "S1",
+    "pivot_distance": 0.41
+  },
+  {
+    "timestamp": "2026-05-31 16:24:21",
+    "symbol": "ARB/USDT",
+    "timeframe": "15m",
+    "direction": "sell",
+    "rsi": 35.29,
+    "price": 0.1008,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:24:19",
+    "symbol": "APT/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 0.92,
+    "pivot_level": "S1",
+    "pivot_distance": 0.4
+  },
+  {
+    "timestamp": "2026-05-31 16:24:16",
+    "symbol": "AIXBT/USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 0.0277,
+    "pivot_level": "S1",
+    "pivot_distance": 0.24
+  },
+  {
+    "timestamp": "2026-05-31 16:24:10",
+    "symbol": "XAG/USDT:USDT",
+    "timeframe": "4h",
+    "direction": "buy",
+    "rsi": 45.61,
+    "price": 75.34,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:24:10",
+    "symbol": "XAG/USDT:USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 45.45,
+    "price": 75.34,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:24:10",
+    "symbol": "XAG/USDT:USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 50.0,
+    "price": 75.34,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:24:08",
+    "symbol": "XAU/USDT:USDT",
+    "timeframe": "1h",
+    "direction": "buy",
+    "rsi": 47.53,
+    "price": 4543.22,
+    "pivot_level": "PP",
+    "pivot_distance": 0.06
+  },
+  {
+    "timestamp": "2026-05-31 16:24:08",
+    "symbol": "XAU/USDT:USDT",
+    "timeframe": "15m",
+    "direction": "buy",
+    "rsi": 65.24,
+    "price": 4543.22,
+    "pivot_level": null,
+    "pivot_distance": null
+  },
+  {
+    "timestamp": "2026-05-31 16:24:08",
+    "symbol": "XAU/USDT:USDT",
+    "timeframe": "5m",
+    "direction": "buy",
+    "rsi": 42.27,
+    "price": 4543.22,
+    "pivot_level": "PP",
+    "pivot_distance": 0.06
+  },
+  {
     "timestamp": "2026-05-31 12:26:56",
     "symbol": "BTC/USDT",
     "timeframe": "5m",

@@ -359,13 +359,13 @@
             </div>
             
             <div class="filter-group">
-                <label>Signal Type:</label>
-                <select id="signalFilter">
-                    <option value="all">All Signals</option>
-                    <option value="buy">🔵 Buy Only</option>
-                    <option value="sell">🔴 Sell Only</option>
-                </select>
-            </div>
+    <label>Signal Validity:</label>
+    <select id="signalFilter">
+        <option value="valid">✅ Valid Only</option>
+        <option value="all">📊 All Signals</option>
+        <option value="invalid">🚫 Rejected Only</option>
+    </select>
+</div>
             
             <div class="auto-refresh">
                 <label>Auto-refresh:</label>
@@ -581,78 +581,82 @@
             return "";
         }
         
-        function displayAlerts(validatedAlerts) {
-            const symbolFilter = document.getElementById('symbolFilter').value;
-            const signalFilter = document.getElementById('signalFilter').value;
-            
-            let filtered = [...validatedAlerts];
-            
-            if (symbolFilter !== 'all') {
-                filtered = filtered.filter(a => a.symbol === symbolFilter);
-            }
-            if (signalFilter === 'buy') {
-                filtered = filtered.filter(a => a.direction === 'buy');
-            } else if (signalFilter === 'sell') {
-                filtered = filtered.filter(a => a.direction === 'sell');
-            }
-            
-            // Sort by timestamp descending (newest first)
-            filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            
-            const tbody = document.getElementById('alertsBody');
-            
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr class="no-data"><td colspan="10">No matching alerts found</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = filtered.map(alert => {
-                const isValid = alert.validation.valid;
-                const rowClass = isValid ? '' : 'rejected';
-                const validityBadge = isValid ? 
-                    '<span class="badge badge-valid">✅ VALID</span>' : 
-                    '<span class="badge badge-invalid">🚫 REJECTED</span>';
-                
-                // Format distance display
-                let distanceDisplay = '';
-                if (alert.distance) {
-                    distanceDisplay = `<span class="distance">${alert.distance.percent.toFixed(2)}%</span>`;
-                } else if (alert.levelPrice) {
-                    distanceDisplay = `<span class="distance">---</span>`;
-                } else {
-                    distanceDisplay = `<span class="distance">N/A</span>`;
-                }
-                
-                // Format level price
-                let levelPriceDisplay = alert.levelPrice ? formatPrice(alert.levelPrice) : 'N/A';
-                
-                // Get signal display with appropriate class
-                const signalDisplay = getSignalDisplay(alert.direction, alert.signalType);
-                const signalClass = getSignalClass(alert.signalType) || alert.direction;
-                
-                // RSI color coding
-                let rsiClass = '';
-                if (alert.rsi > 70) rsiClass = 'take-profit';
-                else if (alert.rsi < 30) rsiClass = 'take-profit';
-                else if (alert.rsi > 60) rsiClass = 'momentum';
-                else if (alert.rsi < 40) rsiClass = 'momentum';
-                
-                return `
-                    <tr class="${rowClass}">
-                        <td class="timestamp">${alert.timestamp}</td>
-                        <td><strong>${alert.symbol}</strong></td>
-                        <td>${alert.timeframe}</td>
-                        <td class="${signalClass}">${signalDisplay}</td>
-                        <td class="${rsiClass}">${alert.rsi}</td>
-                        <td class="price">${formatPrice(alert.price)}</td>
-                        <td class="pivot-level"><span class="level-badge">${alert.pivot_level || 'N/A'}</span></td>
-                        <td class="pivot-price">${levelPriceDisplay}</td>
-                        <td>${distanceDisplay}</td>
-                        <td>${validityBadge}<br><span style="font-size: 10px; color: #888;">${alert.validation.reason}</span></td>
-                    </tr>
-                `;
-            }).join('');
+       function displayAlerts(validatedAlerts) {
+    const symbolFilter = document.getElementById('symbolFilter').value;
+    const signalFilter = document.getElementById('signalFilter').value;
+    
+    let filtered = [...validatedAlerts];
+    
+    // Filter by symbol
+    if (symbolFilter !== 'all') {
+        filtered = filtered.filter(a => a.symbol === symbolFilter);
+    }
+    
+    // Filter by validity (Valid Only, All, or Rejected Only)
+    if (signalFilter === 'valid') {
+        filtered = filtered.filter(a => a.validation.valid === true);
+    } else if (signalFilter === 'invalid') {
+        filtered = filtered.filter(a => a.validation.valid === false);
+    }
+    // 'all' shows everything, no filter needed
+    
+    // Sort by timestamp descending (newest first)
+    filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    const tbody = document.getElementById('alertsBody');
+    
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr class="no-data"><td colspan="10">No matching alerts found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = filtered.map(alert => {
+        const isValid = alert.validation.valid;
+        const rowClass = isValid ? '' : 'rejected';
+        const validityBadge = isValid ? 
+            '<span class="badge badge-valid">✅ VALID</span>' : 
+            '<span class="badge badge-invalid">🚫 REJECTED</span>';
+        
+        // Format distance display
+        let distanceDisplay = '';
+        if (alert.distance) {
+            distanceDisplay = `<span class="distance">${alert.distance.percent.toFixed(2)}%</span>`;
+        } else if (alert.levelPrice) {
+            distanceDisplay = `<span class="distance">---</span>`;
+        } else {
+            distanceDisplay = `<span class="distance">N/A</span>`;
         }
+        
+        // Format level price
+        let levelPriceDisplay = alert.levelPrice ? formatPrice(alert.levelPrice) : 'N/A';
+        
+        // Get signal display with appropriate class
+        const signalDisplay = getSignalDisplay(alert.direction, alert.signalType);
+        const signalClass = getSignalClass(alert.signalType) || alert.direction;
+        
+        // RSI color coding
+        let rsiClass = '';
+        if (alert.rsi > 70) rsiClass = 'take-profit';
+        else if (alert.rsi < 30) rsiClass = 'take-profit';
+        else if (alert.rsi > 60) rsiClass = 'momentum';
+        else if (alert.rsi < 40) rsiClass = 'momentum';
+        
+        return `
+            <tr class="${rowClass}">
+                <td class="timestamp">${alert.timestamp}</td>
+                <td><strong>${alert.symbol}</strong></td>
+                <td>${alert.timeframe}</td>
+                <td class="${signalClass}">${signalDisplay}</td>
+                <td class="${rsiClass}">${alert.rsi}</td>
+                <td class="price">${formatPrice(alert.price)}</td>
+                <td class="pivot-level"><span class="level-badge">${alert.pivot_level || 'N/A'}</span></td>
+                <td class="pivot-price">${levelPriceDisplay}</td>
+                <td>${distanceDisplay}</td>
+                <td>${validityBadge}<br><span style="font-size: 10px; color: #888;">${alert.validation.reason}</span></td>
+            </tr>
+        `;
+    }).join('');
+}
         
         function formatPrice(price) {
             if (price === undefined || price === null) return 'N/A';
