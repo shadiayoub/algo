@@ -44,27 +44,68 @@ CONFIG = {
     "XAU/USDT:USDT",   # Gold
     "XAG/USDT:USDT",   # Silver
     # Cryptocurrencies
-    "BTC/USDT:USDT",
-    "ETH/USDT:USDT",
-    "BNB/USDT:USDT",
+    "AAVE/USDT:USDT",
     "ADA/USDT:USDT",
-    "DOT/USDT:USDT",
-    "SOL/USDT:USDT",
-    "XRP/USDT:USDT",
-    "AVAX/USDT:USDT",
-    "DOGE/USDT:USDT",
-    "LINK/USDT:USDT",
-    "MATIC/USDT:USDT",
-    "NEAR/USDT:USDT",
-    "ATOM/USDT:USDT",
-    "LTC/USDT:USDT",
-    "BCH/USDT:USDT",
-    "UNI/USDT:USDT",
-    "ETC/USDT:USDT",
-    "FIL/USDT:USDT",
+    "AIXBT/USDT:USDT",
+    "ALGO/USDT:USDT",
     "APT/USDT:USDT",
     "ARB/USDT:USDT",
+    "ASTER/USDT:USDT",
+    "ATOM/USDT:USDT",
+    "AVAX/USDT:USDT",
+    "BCH/USDT:USDT",
+    "BNB/USDT:USDT",
+    "BONK/USDT:USDT",
+    "BTC/USDT:USDT",
+    "CRV/USDT:USDT",
+    "DOGE/USDT:USDT",
+    "DOT/USDT:USDT",
+    "ETC/USDT:USDT",
+    "ETH/USDT:USDT",
+    "FARTCOIN/USDT:USDT",
+    "FIL/USDT:USDT",
+    "FLOKI/USDT:USDT",
+    "GRASS/USDT:USDT",
+    "HBAR/USDT:USDT",
+    "HYPE/USDT:USDT",
+    "INJ/USDT:USDT",
+    "IP/USDT:USDT",
+    "JTO/USDT:USDT",
+    "JUP/USDT:USDT",
+    "KAITO/USDT:USDT",
+    "LDO/USDT:USDT",
+    "LINK/USDT:USDT",
+    "LIT/USDT:USDT",
+    "LTC/USDT:USDT",
+    "MOODENG/USDT:USDT",
+    "NEAR/USDT:USDT",
+    "ONDO/USDT:USDT",
     "OP/USDT:USDT",
+    "ORDI/USDT:USDT",
+    "PENGU/USDT:USDT",
+    "PEPE/USDT:USDT",
+    "PNUT/USDT:USDT",
+    "POL/USDT:USDT",
+    "POPCAT/USDT:USDT",
+    "PUMP/USDT:USDT",
+    "RENDER/USDT:USDT",
+    "S/USDT:USDT",
+    "SHIB/USDT:USDT",
+    "SOL/USDT:USDT",
+    "STX/USDT:USDT",
+    "SUI/USDT:USDT",
+    "TAO/USDT:USDT",
+    "TIA/USDT:USDT",
+    "TON/USDT:USDT",
+    "TRUMP/USDT:USDT",
+    "TRX/USDT:USDT",
+    "UNI/USDT:USDT",
+    "VIRTUAL/USDT:USDT",
+    "WIF/USDT:USDT",
+    "WLD/USDT:USDT",
+    "XPL/USDT:USDT",
+    "XRP/USDT:USDT",
+    "ZEC/USDT:USDT",
     ],
     
     # Timeframes to monitor
@@ -159,6 +200,31 @@ class AlertManager:
         except Exception as e:
             pass
     
+    def append_alert_immediately(self, alert_record):
+        """Write a single alert to JSON without rewriting the entire history"""
+        try:
+            from pathlib import Path
+            # Load existing alerts
+            existing = []
+            if Path(self.alert_file).exists():
+                with open(self.alert_file, 'r') as f:
+                    try:
+                        existing = json.load(f)
+                    except json.JSONDecodeError:
+                        existing = []
+            
+            # Add new alert at the beginning (newest first)
+            existing.insert(0, alert_record)
+            
+            # Keep last 500 (prevents file bloat and slow writes)
+            existing = existing[:500]
+            
+            # Write immediately
+            with open(self.alert_file, 'w') as f:
+                json.dump(existing, f, indent=2)
+        except Exception as e:
+            pass  # Silent fail so bot continues
+    
     def should_alert(self, symbol, timeframe, direction):
         key = f"{symbol}_{timeframe}_{direction}"
         now = time.time()
@@ -202,7 +268,8 @@ class AlertManager:
         if len(self.alert_history) > 1000:
             self.alert_history.pop(0)
         
-        self.export_alerts()
+        # CHANGE 2: Write immediately using the new method
+        self.append_alert_immediately(alert_record)
         
         if direction == "buy":
             message = f"[{timestamp}] 🔵 BUY ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}"
