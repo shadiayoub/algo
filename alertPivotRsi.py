@@ -39,73 +39,73 @@ CONFIG = {
     "exchange_type": "futures",  # 'spot' or 'futures'
     
     # Symbols for Binance Futures (use /USDT for USDT-M perpetual)
- "symbols": [
-    # Precious Metals (Binance TradFi Perpetuals)
-    "XAU/USDT:USDT",   # Gold
-    "XAG/USDT:USDT",   # Silver
-    # Cryptocurrencies
-    "AAVE/USDT:USDT",
-    "ADA/USDT:USDT",
-    "AIXBT/USDT:USDT",
-    "ALGO/USDT:USDT",
-    "APT/USDT:USDT",
-    "ARB/USDT:USDT",
-    "ASTER/USDT:USDT",
-    "ATOM/USDT:USDT",
-    "AVAX/USDT:USDT",
-    "BCH/USDT:USDT",
-    "BNB/USDT:USDT",
-    "BONK/USDT:USDT",
-    "BTC/USDT:USDT",
-    "CRV/USDT:USDT",
-    "DOGE/USDT:USDT",
-    "DOT/USDT:USDT",
-    "ETC/USDT:USDT",
-    "ETH/USDT:USDT",
-    "FARTCOIN/USDT:USDT",
-    "FIL/USDT:USDT",
-    "FLOKI/USDT:USDT",
-    "GRASS/USDT:USDT",
-    "HBAR/USDT:USDT",
-    "HYPE/USDT:USDT",
-    "INJ/USDT:USDT",
-    "IP/USDT:USDT",
-    "JTO/USDT:USDT",
-    "JUP/USDT:USDT",
-    "KAITO/USDT:USDT",
-    "LDO/USDT:USDT",
-    "LINK/USDT:USDT",
-    "LIT/USDT:USDT",
-    "LTC/USDT:USDT",
-    "MOODENG/USDT:USDT",
-    "NEAR/USDT:USDT",
-    "ONDO/USDT:USDT",
-    "OP/USDT:USDT",
-    "ORDI/USDT:USDT",
-    "PENGU/USDT:USDT",
-    "PEPE/USDT:USDT",
-    "PNUT/USDT:USDT",
-    "POL/USDT:USDT",
-    "POPCAT/USDT:USDT",
-    "PUMP/USDT:USDT",
-    "RENDER/USDT:USDT",
-    "S/USDT:USDT",
-    "SHIB/USDT:USDT",
-    "SOL/USDT:USDT",
-    "STX/USDT:USDT",
-    "SUI/USDT:USDT",
-    "TAO/USDT:USDT",
-    "TIA/USDT:USDT",
-    "TON/USDT:USDT",
-    "TRUMP/USDT:USDT",
-    "TRX/USDT:USDT",
-    "UNI/USDT:USDT",
-    "VIRTUAL/USDT:USDT",
-    "WIF/USDT:USDT",
-    "WLD/USDT:USDT",
-    "XPL/USDT:USDT",
-    "XRP/USDT:USDT",
-    "ZEC/USDT:USDT",
+    "symbols": [
+        # Precious Metals (Binance TradFi Perpetuals)
+        "XAU/USDT:USDT",   # Gold
+        "XAG/USDT:USDT",   # Silver
+        # Cryptocurrencies
+        "AAVE/USDT:USDT",
+        "ADA/USDT:USDT",
+        "AIXBT/USDT:USDT",
+        "ALGO/USDT:USDT",
+        "APT/USDT:USDT",
+        "ARB/USDT:USDT",
+        "ASTER/USDT:USDT",
+        "ATOM/USDT:USDT",
+        "AVAX/USDT:USDT",
+        "BCH/USDT:USDT",
+        "BNB/USDT:USDT",
+        "BONK/USDT:USDT",
+        "BTC/USDT:USDT",
+        "CRV/USDT:USDT",
+        "DOGE/USDT:USDT",
+        "DOT/USDT:USDT",
+        "ETC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "FARTCOIN/USDT:USDT",
+        "FIL/USDT:USDT",
+        "FLOKI/USDT:USDT",
+        "GRASS/USDT:USDT",
+        "HBAR/USDT:USDT",
+        "HYPE/USDT:USDT",
+        "INJ/USDT:USDT",
+        "IP/USDT:USDT",
+        "JTO/USDT:USDT",
+        "JUP/USDT:USDT",
+        "KAITO/USDT:USDT",
+        "LDO/USDT:USDT",
+        "LINK/USDT:USDT",
+        "LIT/USDT:USDT",
+        "LTC/USDT:USDT",
+        "MOODENG/USDT:USDT",
+        "NEAR/USDT:USDT",
+        "ONDO/USDT:USDT",
+        "OP/USDT:USDT",
+        "ORDI/USDT:USDT",
+        "PENGU/USDT:USDT",
+        "PEPE/USDT:USDT",
+        "PNUT/USDT:USDT",
+        "POL/USDT:USDT",
+        "POPCAT/USDT:USDT",
+        "PUMP/USDT:USDT",
+        "RENDER/USDT:USDT",
+        "S/USDT:USDT",
+        "SHIB/USDT:USDT",
+        "SOL/USDT:USDT",
+        "STX/USDT:USDT",
+        "SUI/USDT:USDT",
+        "TAO/USDT:USDT",
+        "TIA/USDT:USDT",
+        "TON/USDT:USDT",
+        "TRUMP/USDT:USDT",
+        "TRX/USDT:USDT",
+        "UNI/USDT:USDT",
+        "VIRTUAL/USDT:USDT",
+        "WIF/USDT:USDT",
+        "WLD/USDT:USDT",
+        "XPL/USDT:USDT",
+        "XRP/USDT:USDT",
+        "ZEC/USDT:USDT",
     ],
     
     # Timeframes to monitor
@@ -192,6 +192,7 @@ class AlertManager:
         self.last_alert = {}
         self.alert_history = []
         self.alert_file = "rsi_alerts.json"
+        self.last_tp_alert = {}  # For take profit cooldown
         
     def export_alerts(self):
         try:
@@ -236,6 +237,18 @@ class AlertManager:
         self.last_alert[key] = now
         return True
     
+    def should_alert_take_profit(self, symbol, timeframe):
+        """Prevent take profit spam (1 hour cooldown)"""
+        key = f"tp_{symbol}_{timeframe}"
+        now = time.time()
+        
+        if key in self.last_tp_alert:
+            if now - self.last_tp_alert[key] < 3600:  # 1 hour cooldown
+                return False
+        
+        self.last_tp_alert[key] = now
+        return True
+    
     def send_alert(self, symbol, timeframe, direction, rsi_value, price, 
                    actual_symbol=None, pivot_info=None):
         if not self.should_alert(symbol, timeframe, direction):
@@ -268,7 +281,7 @@ class AlertManager:
         if len(self.alert_history) > 1000:
             self.alert_history.pop(0)
         
-        # CHANGE 2: Write immediately using the new method
+        # Write immediately using the new method
         self.append_alert_immediately(alert_record)
         
         if direction == "buy":
@@ -457,15 +470,111 @@ class RSIBot:
         self.alert_manager = AlertManager(config)
         self.last_rsi = {}
         
-    def check_rsi_zone(self, rsi_value):
+    def determine_trend(self, symbol, timeframe="1h"):
+        """Determine if market is trending up, down, or ranging based on higher timeframe"""
+        try:
+            # Fetch 20 candles of higher timeframe (1h or 4h)
+            higher_tf = "1h" if timeframe == "5m" or timeframe == "15m" else "4h"
+            result = self.exchange.fetch_ohlcv_with_fallback(
+                symbol, higher_tf, 20
+            )
+            
+            if result is None or len(result["prices"]) < 20:
+                return "neutral"
+            
+            prices = result["prices"]
+            
+            # Simple trend detection using moving averages
+            sma_short = sum(prices[-10:]) / 10
+            sma_long = sum(prices[-20:]) / 20
+            
+            # Check slope of recent prices
+            recent_slope = (prices[-1] - prices[-5]) / prices[-5] * 100
+            
+            # Calculate ADX or simple volatility
+            price_range = (max(prices[-10:]) - min(prices[-10:])) / min(prices[-10:]) * 100
+            
+            if sma_short > sma_long and recent_slope > 0.1:
+                return "uptrend"
+            elif sma_short < sma_long and recent_slope < -0.1:
+                return "downtrend"
+            elif price_range < 2.0:  # Less than 2% range = ranging
+                return "ranging"
+            else:
+                return "neutral"
+        except:
+            return "neutral"
+    
+    def check_rsi_zone(self, rsi_value, trend_direction="neutral"):
+        """
+        Enhanced RSI zone detection with trend context
+        
+        For trending markets:
+        - RSI 40-50 = buy zone (healthy pullback in uptrend)
+        - RSI 50-60 = sell zone (healthy bounce in downtrend)
+        - RSI > 70 = take profit (not sell)
+        - RSI < 30 = warning (trend may be failing)
+        
+        For ranging markets:
+        - RSI > 70 = sell signal (reversal)
+        - RSI < 30 = buy signal (reversal)
+        """
+        
+        # Original zone definitions
         buy_zone = (self.config["buy_zone_low"] <= rsi_value <= self.config["buy_zone_high"])
         sell_zone = (self.config["sell_zone_low"] <= rsi_value <= self.config["sell_zone_high"])
         
+        # Extreme zones
+        extreme_overbought = rsi_value > 70
+        extreme_oversold = rsi_value < 30
+        
+        # Trend-following logic
+        if trend_direction == "uptrend":
+            if extreme_overbought:
+                return "take_profit_buy"  # Don't sell, just take profits on longs
+            elif buy_zone:
+                return "buy"
+            elif rsi_value > 60 and rsi_value <= 70:
+                return "momentum_buy"  # Strong momentum, can add to position
+            elif extreme_oversold:
+                return "warning"  # Trend may be failing, be cautious
+            else:
+                return None
+            
+        elif trend_direction == "downtrend":
+            if extreme_oversold:
+                return "take_profit_sell"  # Don't buy, just cover shorts
+            elif sell_zone:
+                return "sell"
+            elif rsi_value < 40 and rsi_value >= 30:
+                return "momentum_sell"  # Strong momentum down, can add to short
+            elif buy_zone:
+                return "warning"  # Don't buy in downtrend - wait for better setup
+            elif extreme_overbought:
+                return "warning"  # RSI > 70 in downtrend - trend may be failing
+            else:
+                return None
+                
+        elif trend_direction == "ranging":
+            # In ranging markets, extremes become valid reversal signals
+            if extreme_overbought:
+                return "sell"
+            elif extreme_oversold:
+                return "buy"
+            elif buy_zone:
+                return "buy_cautious"  # Valid but less strong in ranging
+            elif sell_zone:
+                return "sell_cautious"
+            else:
+                return None
+        
+        # Neutral or no clear trend
         if buy_zone:
             return "buy"
         elif sell_zone:
             return "sell"
-        return None
+        else:
+            return None
     
     def get_state_key(self, symbol, timeframe):
         return f"{symbol}_{timeframe}"
@@ -520,6 +629,9 @@ class RSIBot:
         print(f"{'='*60}")
         
         for original_symbol in self.config["symbols"]:
+            # Determine trend for this symbol (using 1h timeframe)
+            trend = self.determine_trend(original_symbol)
+            
             for timeframe in self.config["timeframes"]:
                 result = self.exchange.fetch_ohlcv_with_fallback(
                     original_symbol, timeframe, self.config["candle_limit"]
@@ -530,46 +642,86 @@ class RSIBot:
                 
                 rsi = calculate_rsi(result["prices"], self.config["rsi_period"])
                 
-                if rsi is None:
+                # Skip invalid RSI values
+                if rsi is None or rsi <= 0.01 or rsi >= 99.99:
+                    print(f"  ⚠️ {original_symbol} {timeframe} | Invalid RSI: {rsi}")
                     continue
-                
-                zone = self.check_rsi_zone(rsi)
+    
+                # Pass trend to zone detection
+                zone = self.check_rsi_zone(rsi, trend)
                 key = self.get_state_key(original_symbol, timeframe)
+                
+                # Skip warning signals (just for monitoring, not alerts)
+                if zone == "warning":
+                    continue
                 
                 pivot_info = None
                 pivot_allowed = True
                 
-                if zone and self.config["enable_pivot_filter"]:
+                # Only check pivot alignment for primary buy/sell signals
+                if zone in ["buy", "sell"] and self.config["enable_pivot_filter"]:
                     pivot_info, pivot_allowed = self.check_pivot_alignment(
                         original_symbol, result["actual_symbol"], 
                         result["current_price"], zone
                     )
                 
-                if self.should_alert_state_change(key, zone) and pivot_allowed:
-                    self.alert_manager.send_alert(
-                        symbol=original_symbol,
-                        timeframe=timeframe,
-                        direction=zone,
-                        rsi_value=rsi,
-                        price=result["current_price"],
-                        actual_symbol=result["actual_symbol"],
-                        pivot_info=pivot_info
-                    )
+                # Handle different signal types
+                if pivot_allowed:
+                    if zone in ["buy", "buy_cautious", "momentum_buy"] and self.should_alert_state_change(key, zone):
+                        self.alert_manager.send_alert(
+                            symbol=original_symbol,
+                            timeframe=timeframe,
+                            direction="buy",
+                            rsi_value=rsi,
+                            price=result["current_price"],
+                            actual_symbol=result["actual_symbol"],
+                            pivot_info=pivot_info
+                        )
+                    elif zone in ["sell", "sell_cautious", "momentum_sell"] and self.should_alert_state_change(key, zone):
+                        self.alert_manager.send_alert(
+                            symbol=original_symbol,
+                            timeframe=timeframe,
+                            direction="sell",
+                            rsi_value=rsi,
+                            price=result["current_price"],
+                            actual_symbol=result["actual_symbol"],
+                            pivot_info=pivot_info
+                        )
+                    elif zone in ["take_profit_buy", "take_profit_sell"]:
+                        # Check cooldown before printing take profit
+                        if self.alert_manager.should_alert_take_profit(original_symbol, timeframe):
+                            profit_direction = "buy" if zone == "take_profit_buy" else "sell"
+                            print(f"  💰 TAKE PROFIT: {original_symbol} {timeframe} | RSI: {rsi:.2f} | Price: {result['current_price']}")
                 
-                zone_str = zone.upper() if zone else "---"
+                # Display formatting
+                zone_display = {
+                    "buy": "BUY",
+                    "sell": "SELL",
+                    "buy_cautious": "BUY-C",
+                    "sell_cautious": "SELL-C",
+                    "momentum_buy": "MOM↑",
+                    "momentum_sell": "MOM↓",
+                    "take_profit_buy": "TP-B",
+                    "take_profit_sell": "TP-S",
+                    "warning": "WARN",
+                    None: "---"
+                }.get(zone, "---")
+                
                 display = result["actual_symbol"] if result["actual_symbol"] != original_symbol else original_symbol
                 
                 pivot_display = ""
                 if pivot_info and pivot_info.get("nearest_level"):
                     pivot_display = f" | 📍 {pivot_info['nearest_level']}"
                 
-                print(f"  {display:12} {timeframe:4} | RSI: {rsi:6.2f} | Zone: {zone_str:4} | Price: {result['current_price']}{pivot_display}")
+                trend_symbol = "📈" if trend == "uptrend" else "📉" if trend == "downtrend" else "➖"
+                print(f"  {trend_symbol} {display:12} {timeframe:4} | RSI: {rsi:6.2f} | Zone: {zone_display:6} | Price: {result['current_price']}{pivot_display}")
         
         print(f"Next check in {self.config['check_interval']} seconds...")
     
     def run(self):
         print("\n" + "="*60)
         print("MULTI-EXCHANGE RSI ALERT BOT (with Pivot/SR Integration)")
+        print("ENHANCED: Trend Detection + Extreme RSI Handling")
         print("="*60)
         print(f"Exchange: {self.config['exchange']}")
         print(f"Symbols: {len(self.config['symbols'])} pairs configured")
@@ -580,6 +732,11 @@ class RSIBot:
         print(f"Pivot Proximity: {self.config['pivot_proximity_percent']}%")
         print(f"Check Interval: {self.config['check_interval']} seconds")
         print(f"Audio Alerts: {'ON' if self.config['enable_audio'] else 'OFF'}")
+        print("="*60)
+        print("\nSignal Types:")
+        print("  📈 Uptrend: BUY (40-50) | MOM↑ (60-70) | TP-B (>70)")
+        print("  📉 Downtrend: SELL (50-60) | MOM↓ (30-40) | TP-S (<30)")
+        print("  ➖ Ranging: BUY (<30) | SELL (>70)")
         print("="*60)
         print("\nBot running. Press Ctrl+C to stop.\n")
         

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RSI Alerts Dashboard - Auto Load</title>
+    <title>RSI Alerts Dashboard - Enhanced Edition</title>
     <style>
         * {
             margin: 0;
@@ -67,6 +67,10 @@
         
         .rule-box .invalid {
             color: #ff6b6b;
+        }
+        
+        .rule-box .warning {
+            color: #ffaa00;
         }
         
         .controls {
@@ -193,6 +197,16 @@
             font-weight: bold;
         }
         
+        .take-profit {
+            color: #ffaa00;
+            font-weight: bold;
+        }
+        
+        .momentum {
+            color: #aa66ff;
+            font-weight: bold;
+        }
+        
         .rejected {
             color: #666;
             text-decoration: line-through;
@@ -217,6 +231,12 @@
             background: #ff6b6b20;
             color: #ff6b6b;
             border: 1px solid #ff6b6b40;
+        }
+        
+        .badge-warning {
+            background: #ffaa0020;
+            color: #ffaa00;
+            border: 1px solid #ffaa0040;
         }
         
         .timestamp {
@@ -285,12 +305,31 @@
             font-size: 11px;
             margin-right: 5px;
         }
+        
+        .trend-icon {
+            font-size: 14px;
+            margin-right: 5px;
+        }
+        
+        .signal-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        
+        .signal-buy { background: #00d4aa20; color: #00d4aa; border: 1px solid #00d4aa40; }
+        .signal-sell { background: #ff6b6b20; color: #ff6b6b; border: 1px solid #ff6b6b40; }
+        .signal-momentum { background: #aa66ff20; color: #aa66ff; border: 1px solid #aa66ff40; }
+        .signal-tp { background: #ffaa0020; color: #ffaa00; border: 1px solid #ffaa0040; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📊 RSI Alert Dashboard</h1>
-        <div class="subtitle">Auto-loading from rsi_alerts.json | Shows exact pivot level prices</div>
+        <div class="subtitle">Enhanced Edition - Trend-Aware RSI Signals | Real-time alerts from rsi_alerts.json</div>
         
         <div class="status-bar">
             <span id="statusIndicator">🟢 Status: <span class="status-online">Connected</span></span>
@@ -299,11 +338,13 @@
         </div>
         
         <div class="rule-box">
-            <h3>📐 Strict Pivot Rules</h3>
+            <h3>📐 Enhanced Signal Rules (Trend-Aware)</h3>
             <ul>
-                <li>🔵 <span class="valid">BUY Valid:</span> RSI 40-50 + Price at <strong>PP, S1, or S2</strong> (support)</li>
-                <li>🔴 <span class="valid">SELL Valid:</span> RSI 50-60 + Price at <strong>PP, R1, or R2</strong> (resistance)</li>
-                <li>🚫 <span class="invalid">REJECTED:</span> Buy at R1/R2/R3 or Sell at S1/S2/S3</li>
+                <li>📈 <span class="valid">UPTREND:</span> BUY (40-50) | MOM↑ (60-70) | TP-B (>70)</li>
+                <li>📉 <span class="valid">DOWNTREND:</span> SELL (50-60) | MOM↓ (30-40) | TP-S (<30)</li>
+                <li>➖ <span class="valid">RANGING:</span> BUY (<30) | SELL (>70)</li>
+                <li>📍 <span class="valid">PIVOT VALID:</span> BUY at PP/S1/S2 | SELL at PP/R1/R2</li>
+                <li>⚠️ <span class="warning">WARNING:</span> Counter-trend signals (monitoring only)</li>
             </ul>
         </div>
         
@@ -320,15 +361,15 @@
             <div class="filter-group">
                 <label>Signal Type:</label>
                 <select id="signalFilter">
-                    <option value="valid">✅ Valid Only</option>
                     <option value="all">All Signals</option>
-                    <option value="invalid">🚫 Rejected Only</option>
+                    <option value="buy">🔵 Buy Only</option>
+                    <option value="sell">🔴 Sell Only</option>
                 </select>
             </div>
             
             <div class="auto-refresh">
                 <label>Auto-refresh:</label>
-                <input type="number" id="refreshInterval" value="10" min="2" max="60">
+                <input type="number" id="refreshInterval" value="5" min="2" max="60">
                 <span>seconds</span>
             </div>
         </div>
@@ -350,6 +391,10 @@
                 <div class="stat-label">Valid %</div>
                 <div class="stat-value" id="winRate" style="font-size: 24px;">0%</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Symbols</div>
+                <div class="stat-value" id="activeSymbols" style="font-size: 24px;">0</div>
+            </div>
         </div>
         
         <div style="overflow-x: auto;">
@@ -361,9 +406,9 @@
                         <th>TF</th>
                         <th>Signal</th>
                         <th>RSI</th>
-                        <th>Current Price</th>
-                        <th>Pivot Level</th>
-                        <th>Level Price</th>
+                        <th>Price</th>
+                        <th>Pivot</th>
+                        <th>Pivot Price</th>
                         <th>Distance</th>
                         <th>Validity</th>
                     </tr>
@@ -376,7 +421,7 @@
             </table>
         </div>
         <div class="refresh-note" style="text-align: center; margin-top: 20px; font-size: 12px; color: #555;">
-            💡 Make sure you're running: <code>python3 -m http.server 8080</code> in the bot folder
+            💡 Bot running with: Trend Detection | Pivot Filter | Multi-Timeframe RSI
         </div>
     </div>
 
@@ -384,31 +429,22 @@
         let currentValidated = [];
         let autoRefreshTimer = null;
         
-        // Pivot validation rules with level prices
+        // Pivot validation rules with level prices - UPDATED for enhanced signals
         const BUY_VALID_LEVELS = ["PP", "S1", "S2"];
         const SELL_VALID_LEVELS = ["PP", "R1", "R2"];
         
-        // Mock pivot prices - in production, these would come from the bot
-        // The bot should include actual pivot prices in the JSON
+        // Get actual pivot price - improved estimation
         function getPivotPrice(level, currentPrice) {
-            // This is a fallback estimation. Ideally the bot includes actual pivot prices.
-            // For now, estimate based on level type
             if (!level) return null;
-            if (level === "PP") return currentPrice;
-            if (level === "R1") return currentPrice * 1.02;
-            if (level === "R2") return currentPrice * 1.04;
-            if (level === "S1") return currentPrice * 0.98;
-            if (level === "S2") return currentPrice * 0.96;
-            if (level === "R3") return currentPrice * 1.06;
-            if (level === "S3") return currentPrice * 0.94;
+            // Standard pivot multipliers (these will be replaced by actual bot data when available)
+            const multipliers = {
+                "R3": 1.06, "R2": 1.04, "R1": 1.02,
+                "PP": 1.00,
+                "S1": 0.98, "S2": 0.96, "S3": 0.94
+            };
+            const multiplier = multipliers[level];
+            if (multiplier) return currentPrice * multiplier;
             return null;
-        }
-        
-        function calculateDistance(price, levelPrice) {
-            if (!levelPrice) return null;
-            const diff = Math.abs(price - levelPrice);
-            const percent = (diff / price) * 100;
-            return { diff, percent };
         }
         
         function validateSignal(direction, pivotLevel, currentPrice) {
@@ -418,24 +454,40 @@
             
             if (direction === "buy") {
                 if (BUY_VALID_LEVELS.includes(pivotLevel)) {
-                    return { valid: true, reason: `Valid buy at ${pivotLevel} (support)`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
+                    return { valid: true, reason: `✅ Valid buy at ${pivotLevel} (support)`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
                 } else if (pivotLevel.startsWith("R")) {
-                    return { valid: false, reason: `REJECTED: Buy at ${pivotLevel} (resistance) - would buy high`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
+                    return { valid: false, reason: `❌ REJECTED: Buy at ${pivotLevel} (resistance) - would buy high`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
                 } else {
-                    return { valid: false, reason: `Buy at ${pivotLevel} - not a standard support level`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
+                    return { valid: false, reason: `⚠️ Buy at ${pivotLevel} - not a standard support level`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
                 }
             } 
             else if (direction === "sell") {
                 if (SELL_VALID_LEVELS.includes(pivotLevel)) {
-                    return { valid: true, reason: `Valid sell at ${pivotLevel} (resistance)`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
+                    return { valid: true, reason: `✅ Valid sell at ${pivotLevel} (resistance)`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
                 } else if (pivotLevel.startsWith("S")) {
-                    return { valid: false, reason: `REJECTED: Sell at ${pivotLevel} (support) - would sell low`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
+                    return { valid: false, reason: `❌ REJECTED: Sell at ${pivotLevel} (support) - would sell low`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
                 } else {
-                    return { valid: false, reason: `Sell at ${pivotLevel} - not a standard resistance level`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
+                    return { valid: false, reason: `⚠️ Sell at ${pivotLevel} - not a standard resistance level`, levelPrice: getPivotPrice(pivotLevel, currentPrice), distance: null };
                 }
             }
             
             return { valid: false, reason: "Unknown direction", levelPrice: null, distance: null };
+        }
+        
+        // New function to detect signal type from data (if bot provides it)
+        function getSignalType(direction, rsi, pivotLevel) {
+            if (!direction) return "unknown";
+            
+            // Try to infer from RSI and pivot
+            if (direction === "buy") {
+                if (rsi > 70) return "take_profit";
+                if (rsi > 60) return "momentum";
+                return "standard";
+            } else {
+                if (rsi < 30) return "take_profit";
+                if (rsi < 40) return "momentum";
+                return "standard";
+            }
         }
         
         async function loadAlerts() {
@@ -464,11 +516,15 @@
                         distanceInfo = { diff, percent };
                     }
                     
+                    // Add inferred signal type
+                    const signalType = getSignalType(alert.direction, alert.rsi, alert.pivot_level);
+                    
                     return {
                         ...alert,
                         validation: validation,
                         levelPrice: validation.levelPrice,
-                        distance: distanceInfo
+                        distance: distanceInfo,
+                        signalType: signalType
                     };
                 });
                 
@@ -491,6 +547,7 @@
             document.getElementById('validCount').innerText = '0';
             document.getElementById('invalidCount').innerText = '0';
             document.getElementById('winRate').innerHTML = '0%';
+            document.getElementById('activeSymbols').innerHTML = '0';
         }
         
         function updateStatus(connected, alertCount) {
@@ -509,6 +566,21 @@
             document.getElementById('lastUpdate').innerHTML = `Last update: ${now.toLocaleTimeString()}`;
         }
         
+        function getSignalDisplay(direction, signalType) {
+            if (signalType === "momentum") {
+                return direction === 'buy' ? '🔵 MOM↑' : '🔴 MOM↓';
+            } else if (signalType === "take_profit") {
+                return direction === 'buy' ? '💰 TP-B' : '💰 TP-S';
+            }
+            return direction === 'buy' ? '🔵 BUY' : '🔴 SELL';
+        }
+        
+        function getSignalClass(signalType) {
+            if (signalType === "momentum") return "momentum";
+            if (signalType === "take_profit") return "take-profit";
+            return "";
+        }
+        
         function displayAlerts(validatedAlerts) {
             const symbolFilter = document.getElementById('symbolFilter').value;
             const signalFilter = document.getElementById('signalFilter').value;
@@ -518,10 +590,10 @@
             if (symbolFilter !== 'all') {
                 filtered = filtered.filter(a => a.symbol === symbolFilter);
             }
-            if (signalFilter === 'valid') {
-                filtered = filtered.filter(a => a.validation.valid === true);
-            } else if (signalFilter === 'invalid') {
-                filtered = filtered.filter(a => a.validation.valid === false);
+            if (signalFilter === 'buy') {
+                filtered = filtered.filter(a => a.direction === 'buy');
+            } else if (signalFilter === 'sell') {
+                filtered = filtered.filter(a => a.direction === 'sell');
             }
             
             // Sort by timestamp descending (newest first)
@@ -554,13 +626,24 @@
                 // Format level price
                 let levelPriceDisplay = alert.levelPrice ? formatPrice(alert.levelPrice) : 'N/A';
                 
+                // Get signal display with appropriate class
+                const signalDisplay = getSignalDisplay(alert.direction, alert.signalType);
+                const signalClass = getSignalClass(alert.signalType) || alert.direction;
+                
+                // RSI color coding
+                let rsiClass = '';
+                if (alert.rsi > 70) rsiClass = 'take-profit';
+                else if (alert.rsi < 30) rsiClass = 'take-profit';
+                else if (alert.rsi > 60) rsiClass = 'momentum';
+                else if (alert.rsi < 40) rsiClass = 'momentum';
+                
                 return `
                     <tr class="${rowClass}">
                         <td class="timestamp">${alert.timestamp}</td>
                         <td><strong>${alert.symbol}</strong></td>
                         <td>${alert.timeframe}</td>
-                        <td class="${alert.direction}">${alert.direction === 'buy' ? '🔵 BUY' : '🔴 SELL'}</td>
-                        <td>${alert.rsi}</td>
+                        <td class="${signalClass}">${signalDisplay}</td>
+                        <td class="${rsiClass}">${alert.rsi}</td>
                         <td class="price">${formatPrice(alert.price)}</td>
                         <td class="pivot-level"><span class="level-badge">${alert.pivot_level || 'N/A'}</span></td>
                         <td class="pivot-price">${levelPriceDisplay}</td>
@@ -585,10 +668,14 @@
             const invalid = total - valid;
             const winRate = total > 0 ? (valid / total * 100).toFixed(1) : 0;
             
+            // Count unique symbols
+            const uniqueSymbols = new Set(validatedAlerts.map(a => a.symbol)).size;
+            
             document.getElementById('totalCount').innerText = total;
             document.getElementById('validCount').innerText = valid;
             document.getElementById('invalidCount').innerText = invalid;
             document.getElementById('winRate').innerHTML = `${winRate}%`;
+            document.getElementById('activeSymbols').innerHTML = uniqueSymbols;
         }
         
         function updateFilters(validatedAlerts) {
