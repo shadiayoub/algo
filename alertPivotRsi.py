@@ -130,18 +130,17 @@ CONFIG = {
     "sl_buffer_percent": 0.25,
     "tp_buffer_percent": 0.15,
     "min_confidence_for_webhook": 3,
-        "webhook_allowed_symbols": [
-        "PENGUUSD", "FLOKIUSD", "AAVEUSD", "XAGUSD", "ORDIUSD", "BCHUSD",
-        "ATOMUSD", "XAUUSD", "ASTERUSD", "KAITOUSD",
-        "FILUSD", "BNBUSD", "AIXBTUSD", "HBARUSD", "RENDERUSD", "DOTUSD",
-        "XRPUSD", "ETHUSD", "BTCUSD", "ETCUSD", "WIFUSD",
-        "UNIUSD", "TRXUSD", "IPUSD", "JUPUSD", "HYPEUSD", "BONKUSD",
-        "MOODENGUSD", "LDOUSD", "CRVUSD", "APTUSD", "VIRTUALUSD", "TIAUSD",
-        "SUSD", "POLUSD", "LINKUSD", "POPCATUSD", "INJUSD", "ZECUSD",
-        "WLDUSD", "SUIUSD", "SHIBUSD", "LTCUSD", "TAOUSD", "FARTCOINUSD",
-        "ADAUSD", "ALGOUSD", "TONUSD", "SOLUSD", "PNUTUSD", "PEPEUSD",
-        "OPUSD", "GRASSUSD", "AVAXUSD", "ARBUSD", "NEARUSD"
-    ],
+    "webhook_allowed_symbols": [
+        "BTCUSD", "ETHUSD", "XAUUSD", "XAGUSD",
+        "ADAUSD", "DOGEUSD", "XRPUSD", "LTCUSD",
+        "DOTUSD", "SOLUSD", "BNBUSD", "BCHUSD",
+        "ETCUSD", "UNIUSD", "XMRUSD", "LNKUSD",
+        "AVAUSD", "NERUSD", "AAVUSD", "BARUSD",
+        "GALUSD", "SANUSD", "MANUSD", "ALGUSD",
+        "VECUSD", "XTZUSD", "IMXUSD", "GRTUSD",
+        "ICPUSD", "FETUSD", "XLMUSD", "NEOUSD",
+        "DASHUSD"
+        ],
 
     # Bot Settings
     "check_interval": 15,
@@ -533,7 +532,8 @@ class RSIBot:
 
         # Symbol whitelist — skip symbols DoochyBot doesn't have configured
         allowed = self.config.get("webhook_allowed_symbols", [])
-        if allowed and symbol not in allowed:
+        doochybot_symbol = self._format_symbol(symbol)
+        if allowed and doochybot_symbol not in allowed:
             return
 
         # Rate limit: one webhook per symbol per 5 minutes
