@@ -9,6 +9,7 @@ import pandas as pd
 import time
 import json
 import sys
+import requests
 from datetime import datetime
 from pathlib import Path
 
@@ -122,7 +123,14 @@ CONFIG = {
     "enable_pivot_filter": True,
     "pivot_proximity_percent": 0.5,
     "pivot_timeframe": "1d",
-    
+
+    # DoochyBot Webhook Settings
+    "enable_doochybot_webhook": True,
+    "doochybot_webhook_url": "https://aprhunter.route07.com/webhook",
+    "sl_buffer_percent": 0.25,
+    "tp_buffer_percent": 0.15,
+    "min_confidence_for_webhook": 3,
+
     # Bot Settings
     "check_interval": 15,
     "enable_audio": True,
@@ -469,7 +477,122 @@ class RSIBot:
         self.exchange = ExchangeClient(config["exchange"], config)
         self.alert_manager = AlertManager(config)
         self.last_rsi = {}
-        
+        self._webhook_last_sent = {}  # symbol → timestamp of last webhook
+
+    def _format_symbol(self, symbol):
+        """Convert exchange symbol to DoochyBot format (e.g. BTC/USDT:USDT → BTCUSD)."""
+        s = symbol.split(":")[0]   # drop ":USDT" perpetual suffix
+        s = s.replace("/", "")     # "BTC/USDT" → "BTCUSDT"
+        if s.endswith("USDT"):
+            s = s[:-4] + "USD"     # "BTCUSDT" → "BTCUSD"
+        return s
+
+    def _get_sl_tp_decimals(self, symbol, price):
+        if "XAU" in symbol or "XAG" in symbol:
+            return 2
+        if price > 1000:
+            return 0
+        if price > 100:
+            return 2
+        if price > 1:
+            return 4
+        return 6
+
+    def send_to_doochybot(self, alert_data, pivots):
+        """Format a valid RSI+pivot signal and POST it to the DoochyBot webhook."""
+        if not self.config.get("enable_doochybot_webhook", False):
+            return
+
+        symbol    = alert_data["symbol"]
+        direction = alert_data["direction"]
+        price     = alert_data["price"]
+        rsi       = alert_data.get("rsi", 0)
+        pivot_level = alert_data.get("pivot_level")
+
+        # Step 1 — Validate signal quality
+        if not pivot_level:
+            return
+        if direction not in ("buy", "sell"):
+            return
+        if direction == "buy" and not (35 <= rsi <= 55):
+            return
+        if direction == "sell" and not (45 <= rsi <= 65):
+            return
+
+        # Rate limit: one webhook per symbol per 5 minutes
+        now = time.time()
+        if now - self._webhook_last_sent.get(symbol, 0) < 300:
+            return
+
+        if not pivots:
+            return
+
+        # Step 2 — Find which two pivot levels price sits between
+        level_names = ["R3", "R2", "R1", "PP", "S1", "S2", "S3"]
+        level_pairs = [(n, pivots[n]) for n in level_names if pivots.get(n) is not None]
+        level_pairs.sort(key=lambda x: x[1])  # ascending by price
+
+        lower = None   # highest level at or below price
+        upper = None   # lowest level above price
+
+        for name, lp in level_pairs:
+            if lp <= price:
+                lower = (name, lp)
+            elif upper is None:
+                upper = (name, lp)
+
+        # Edge cases: price outside all levels
+        if lower is None and len(level_pairs) >= 2:
+            lower, upper = level_pairs[0], level_pairs[1]
+        elif upper is None and len(level_pairs) >= 2:
+            lower, upper = level_pairs[-2], level_pairs[-1]
+
+        if not lower or not upper:
+            return
+
+        lower_name, lower_price = lower
+        upper_name, upper_price = upper
+
+        # Step 3 — Calculate SL and TP
+        sl_buf = self.config.get("sl_buffer_percent", 0.25) / 100
+        tp_buf = self.config.get("tp_buffer_percent", 0.15) / 100
+
+        if direction == "buy":
+            sl = lower_price * (1 - sl_buf)
+            tp = upper_price * (1 - tp_buf)
+        else:
+            sl = upper_price * (1 + sl_buf)
+            tp = lower_price * (1 + tp_buf)
+
+        decimals = self._get_sl_tp_decimals(symbol, price)
+        sl = round(sl, decimals)
+        tp = round(tp, decimals)
+
+        # Step 4 — Format signal string
+        doochybot_symbol = self._format_symbol(symbol)
+        direction_str = "BUY" if direction == "buy" else "SELL"
+        signal = f"{direction_str} {doochybot_symbol} SL={sl} TP={tp}"
+
+        # Step 5 — POST to DoochyBot
+        url = self.config.get("doochybot_webhook_url", "")
+        if not url:
+            return
+
+        try:
+            resp = requests.post(
+                url,
+                data=signal,
+                headers={"Content-Type": "text/plain"},
+                timeout=5
+            )
+            if resp.status_code < 300:
+                print(f"  🚀 Webhook sent: {signal}")
+                self._webhook_last_sent[symbol] = now
+            else:
+                print(f"  ❌ Webhook failed [{resp.status_code}]: {resp.text[:120]}")
+        except Exception as e:
+            print(f"  ❌ Webhook error: {e}")
+
     def determine_trend(self, symbol, timeframe="1h"):
         """Determine if market is trending up, down, or ranging based on higher timeframe"""
         try:
@@ -677,6 +800,18 @@ class RSIBot:
                             actual_symbol=result["actual_symbol"],
                             pivot_info=pivot_info
                         )
+                        if pivot_info and pivot_info.get("nearest_level"):
+                            pivots = self.exchange.get_daily_pivots(
+                                original_symbol, result["actual_symbol"]
+                            )
+                            self.send_to_doochybot({
+                                "symbol": result["actual_symbol"],
+                                "direction": "buy",
+                                "price": result["current_price"],
+                                "rsi": rsi,
+                                "timeframe": timeframe,
+                                "pivot_level": pivot_info["nearest_level"],
+                            }, pivots)
                     elif zone in ["sell", "sell_cautious", "momentum_sell"] and self.should_alert_state_change(key, zone):
                         self.alert_manager.send_alert(
                             symbol=original_symbol,
@@ -687,6 +822,18 @@ class RSIBot:
                             actual_symbol=result["actual_symbol"],
                             pivot_info=pivot_info
                         )
+                        if pivot_info and pivot_info.get("nearest_level"):
+                            pivots = self.exchange.get_daily_pivots(
+                                original_symbol, result["actual_symbol"]
+                            )
+                            self.send_to_doochybot({
+                                "symbol": result["actual_symbol"],
+                                "direction": "sell",
+                                "price": result["current_price"],
+                                "rsi": rsi,
+                                "timeframe": timeframe,
+                                "pivot_level": pivot_info["nearest_level"],
+                            }, pivots)
                     elif zone in ["take_profit_buy", "take_profit_sell"]:
                         # Check cooldown before printing take profit
                         if self.alert_manager.should_alert_take_profit(original_symbol, timeframe):

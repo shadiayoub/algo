@@ -324,6 +324,107 @@
         .signal-sell { background: #ff6b6b20; color: #ff6b6b; border: 1px solid #ff6b6b40; }
         .signal-momentum { background: #aa66ff20; color: #aa66ff; border: 1px solid #aa66ff40; }
         .signal-tp { background: #ffaa0020; color: #ffaa00; border: 1px solid #ffaa0040; }
+
+        .settings-panel {
+            background: #1a1f2a;
+            border-left: 3px solid #4a90d9;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .settings-header h3 {
+            color: #4a90d9;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .settings-header .toggle-arrow {
+            color: #4a90d9;
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+
+        .settings-body {
+            padding: 0 20px 18px;
+            display: none;
+        }
+
+        .settings-body.open {
+            display: block;
+        }
+
+        .settings-grid {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-bottom: 14px;
+        }
+
+        .settings-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .settings-field label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .settings-field input[type="number"],
+        .settings-field input[type="text"] {
+            width: 120px;
+        }
+
+        .settings-field input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #4a90d9;
+        }
+
+        .settings-field .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 32px;
+        }
+
+        .settings-field .checkbox-row span {
+            font-size: 13px;
+            color: #e0e0e0;
+        }
+
+        .settings-save-btn {
+            background: #4a90d9;
+            border-color: #4a90d9;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .settings-save-btn:hover {
+            background: #357abd;
+            border-color: #357abd;
+        }
+
+        .settings-note {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -335,6 +436,7 @@
             <span id="statusIndicator">🟢 Status: <span class="status-online">Connected</span></span>
             <span id="lastUpdate" class="last-update">Last update: --</span>
             <span id="alertCount" class="last-update">Alerts: 0</span>
+            <span id="webhookStatus" class="last-update" style="color: #00d4aa;">🚀 Webhook: https://aprhunter.route07.com/webhook</span>
         </div>
         
         <div class="rule-box">
@@ -348,6 +450,41 @@
             </ul>
         </div>
         
+        <div class="settings-panel">
+            <div class="settings-header" onclick="toggleSettings()">
+                <h3>⚙️ DoochyBot Webhook Settings</h3>
+                <span class="toggle-arrow" id="settingsArrow">▼</span>
+            </div>
+            <div class="settings-body" id="settingsBody">
+                <div class="settings-grid">
+                    <div class="settings-field">
+                        <label>Webhook URL</label>
+                        <input type="text" id="cfgWebhookUrl" value="https://aprhunter.route07.com/webhook" style="width: 300px;">
+                    </div>
+                    <div class="settings-field">
+                        <label>SL Buffer % (beyond pivot level)</label>
+                        <input type="number" id="cfgSlBuffer" value="0.25" min="0.1" max="2.0" step="0.05">
+                    </div>
+                    <div class="settings-field">
+                        <label>TP Buffer % (before next level)</label>
+                        <input type="number" id="cfgTpBuffer" value="0.15" min="0.1" max="2.0" step="0.05">
+                    </div>
+                    <div class="settings-field">
+                        <label>Send Signals to DoochyBot</label>
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="cfgWebhookEnabled" checked>
+                            <span id="cfgWebhookEnabledLabel">Enabled</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="settings-save-btn" onclick="saveConfig()">💾 Download config.json</button>
+                <p class="settings-note">
+                    Save the downloaded file to <code>/home/san/algo/config.json</code> and restart the bot for changes to take effect.
+                    The bot applies config.json on startup via <code>CONFIG.update(user_config)</code>.
+                </p>
+            </div>
+        </div>
+
         <div class="controls">
             <button onclick="refreshData()">🔄 Refresh Now</button>
             
@@ -711,6 +848,44 @@
         // Initial load
         loadAlerts();
         startAutoRefresh();
+
+        // ── DoochyBot settings panel ──────────────────────────────────
+        function toggleSettings() {
+            const body = document.getElementById('settingsBody');
+            const arrow = document.getElementById('settingsArrow');
+            const isOpen = body.classList.toggle('open');
+            arrow.textContent = isOpen ? '▲' : '▼';
+        }
+
+        document.getElementById('cfgWebhookEnabled').addEventListener('change', function () {
+            document.getElementById('cfgWebhookEnabledLabel').textContent = this.checked ? 'Enabled' : 'Disabled';
+        });
+
+        function saveConfig() {
+            const cfg = {
+                enable_doochybot_webhook: document.getElementById('cfgWebhookEnabled').checked,
+                doochybot_webhook_url: document.getElementById('cfgWebhookUrl').value.trim(),
+                sl_buffer_percent: parseFloat(document.getElementById('cfgSlBuffer').value),
+                tp_buffer_percent: parseFloat(document.getElementById('cfgTpBuffer').value)
+            };
+            const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'config.json';
+            a.click();
+        }
+
+        // Update webhook status bar to reflect current setting
+        document.getElementById('cfgWebhookEnabled').addEventListener('change', function () {
+            const statusEl = document.getElementById('webhookStatus');
+            if (this.checked) {
+                statusEl.style.color = '#00d4aa';
+                statusEl.textContent = '🚀 Webhook: ' + document.getElementById('cfgWebhookUrl').value.trim();
+            } else {
+                statusEl.style.color = '#666';
+                statusEl.textContent = '⏸ Webhook: disabled';
+            }
+        });
     </script>
 </body>
 </html>
