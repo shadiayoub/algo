@@ -130,7 +130,18 @@ CONFIG = {
     "sl_buffer_percent": 0.25,
     "tp_buffer_percent": 0.15,
     "min_confidence_for_webhook": 3,
-    "webhook_allowed_symbols": ["BTCUSD", "XAUUSD", "XAGUSD"],
+        "webhook_allowed_symbols": [
+        "PENGUUSD", "FLOKIUSD", "AAVEUSD", "XAGUSD", "ORDIUSD", "BCHUSD",
+        "ATOMUSD", "XAUUSD", "ASTERUSD", "KAITOUSD",
+        "FILUSD", "BNBUSD", "AIXBTUSD", "HBARUSD", "RENDERUSD", "DOTUSD",
+        "XRPUSD", "ETHUSD", "BTCUSD", "ETCUSD", "WIFUSD",
+        "UNIUSD", "TRXUSD", "IPUSD", "JUPUSD", "HYPEUSD", "BONKUSD",
+        "MOODENGUSD", "LDOUSD", "CRVUSD", "APTUSD", "VIRTUALUSD", "TIAUSD",
+        "SUSD", "POLUSD", "LINKUSD", "POPCATUSD", "INJUSD", "ZECUSD",
+        "WLDUSD", "SUIUSD", "SHIBUSD", "LTCUSD", "TAOUSD", "FARTCOINUSD",
+        "ADAUSD", "ALGOUSD", "TONUSD", "SOLUSD", "PNUTUSD", "PEPEUSD",
+        "OPUSD", "GRASSUSD", "AVAXUSD", "ARBUSD", "NEARUSD"
+    ],
 
     # Bot Settings
     "check_interval": 15,
