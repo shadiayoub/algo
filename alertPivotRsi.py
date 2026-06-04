@@ -130,6 +130,7 @@ CONFIG = {
     "sl_buffer_percent": 0.25,
     "tp_buffer_percent": 0.15,
     "min_confidence_for_webhook": 3,
+    "webhook_allowed_symbols": ["BTCUSD", "XAUUSD", "XAGUSD"],
 
     # Bot Settings
     "check_interval": 15,
@@ -517,6 +518,11 @@ class RSIBot:
         if direction == "buy" and not (35 <= rsi <= 55):
             return
         if direction == "sell" and not (45 <= rsi <= 65):
+            return
+
+        # Symbol whitelist — skip symbols DoochyBot doesn't have configured
+        allowed = self.config.get("webhook_allowed_symbols", [])
+        if allowed and symbol not in allowed:
             return
 
         # Rate limit: one webhook per symbol per 5 minutes
