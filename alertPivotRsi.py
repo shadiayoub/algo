@@ -98,7 +98,6 @@ CONFIG = {
         "TAO/USDT:USDT",
         "TIA/USDT:USDT",
         "TON/USDT:USDT",
-        "TRUMP/USDT:USDT",
         "TRX/USDT:USDT",
         "UNI/USDT:USDT",
         "VIRTUAL/USDT:USDT",
@@ -590,25 +589,34 @@ class RSIBot:
         direction_str = "BUY" if direction == "buy" else "SELL"
         signal = f"{direction_str} {doochybot_symbol} SL={sl} TP={tp}"
 
-        # Step 5 — POST to DoochyBot
+        # Step 5 — POST to DoochyBot (retry up to 3 times on 5xx)
         url = self.config.get("doochybot_webhook_url", "")
         if not url:
             return
 
-        try:
-            resp = requests.post(
-                url,
-                data=signal,
-                headers={"Content-Type": "text/plain"},
-                timeout=5
-            )
-            if resp.status_code < 300:
-                print(f"  🚀 Webhook sent: {signal}")
-                self._webhook_last_sent[symbol] = now
-            else:
-                print(f"  ❌ Webhook failed [{resp.status_code}]: {resp.text[:120]}")
-        except Exception as e:
-            print(f"  ❌ Webhook error: {e}")
+        for attempt in range(3):
+            try:
+                resp = requests.post(
+                    url,
+                    data=signal,
+                    headers={"Content-Type": "text/plain"},
+                    timeout=5
+                )
+                if resp.status_code < 300:
+                    print(f"  🚀 Webhook sent: {signal}")
+                    self._webhook_last_sent[symbol] = now
+                    return
+                elif resp.status_code >= 500 and attempt < 2:
+                    time.sleep(2 ** attempt)
+                    continue
+                else:
+                    print(f"  ❌ Webhook failed [{resp.status_code}]: {resp.text[:120]}")
+                    return
+            except Exception as e:
+                if attempt < 2:
+                    time.sleep(2 ** attempt)
+                    continue
+                print(f"  ❌ Webhook error: {e}")
 
     def determine_trend(self, symbol, timeframe="1h"):
         """Determine if market is trending up, down, or ranging based on higher timeframe"""
