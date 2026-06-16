@@ -9,7 +9,6 @@ import pandas as pd
 import time
 import json
 import sys
-import requests
 from datetime import datetime
 from pathlib import Path
 
@@ -123,23 +122,12 @@ CONFIG = {
     "pivot_proximity_percent": 0.5,
     "pivot_timeframe": "1d",
 
-    # DoochyBot Webhook Settings
-    "enable_doochybot_webhook": True,
-    "doochybot_webhook_url": "https://aprhunter.route07.com/webhook",
-    "sl_buffer_percent": 0.25,
-    "tp_buffer_percent": 0.15,
-    "min_confidence_for_webhook": 3,
-    "webhook_allowed_symbols": [
-        "BTCUSD", "ETHUSD", "XAUUSD", "XAGUSD",
-        "ADAUSD", "DOGEUSD", "XRPUSD", "LTCUSD",
-        "DOTUSD", "SOLUSD", "BNBUSD", "BCHUSD",
-        "ETCUSD", "UNIUSD", "XMRUSD", "LNKUSD",
-        "AVAUSD", "NERUSD", "AAVUSD", "BARUSD",
-        "GALUSD", "SANUSD", "MANUSD", "ALGUSD",
-        "VECUSD", "XTZUSD", "IMXUSD", "GRTUSD",
-        "ICPUSD", "FETUSD", "XLMUSD", "NEOUSD",
-        "DASHUSD"
-        ],
+    # Feed Filter — suppress signals that fight the higher-timeframe trend, applied at
+    # the rsi_alerts.json write point so trend-misaligned signals never reach DoochyBot.
+    # Simple price comparison on data MiniSig already fetches — no extra requests.
+    "trend_filter_enabled": True,
+    "trend_lookback_1h": 1,   # 1H series: current vs N candles ago (1 candle ≈ 1h short-term trend)
+    "trend_lookback_4h": 2,   # 4H series: current vs N candles ago (1 candle ≈ 4h main trend)
 
     # Bot Settings
     "check_interval": 15,
@@ -267,9 +255,31 @@ class AlertManager:
         self.last_tp_alert[key] = now
         return True
     
-    def send_alert(self, symbol, timeframe, direction, rsi_value, price, 
-                   actual_symbol=None, pivot_info=None):
-        if not self.should_alert(symbol, timeframe, direction):
+    def _confluence_score(self, direction, rsi_value, pivot_level, pivot_distance):
+        """Score signal quality 0–4 based on RSI zone depth and pivot alignment.
+
+        +2 if RSI is in the ideal zone (buy 40-50, sell 50-60)
+        +1 if a pivot level is present
+        +1 if pivot_distance < 0.5%
+        """
+        score = 0
+        if direction == "buy" and self.config["buy_zone_low"] <= rsi_value <= self.config["buy_zone_high"]:
+            score += 2
+        elif direction == "sell" and self.config["sell_zone_low"] <= rsi_value <= self.config["sell_zone_high"]:
+            score += 2
+        if pivot_level is not None:
+            score += 1
+        if pivot_distance is not None and pivot_distance < 0.5:
+            score += 1
+        return score
+
+    def send_alert(self, symbol, timeframe, direction, rsi_value, price,
+                   actual_symbol=None, pivot_info=None,
+                   publish_to_feed=True, suppress_reason=None):
+        # The cooldown only throttles published (actionable) alerts. A suppressed signal
+        # must not consume it, or it could block a later trend-aligned publish of the same
+        # symbol/timeframe/direction within the cooldown window.
+        if publish_to_feed and not self.should_alert(symbol, timeframe, direction):
             return
         
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -283,7 +293,9 @@ class AlertManager:
             pivot_level = pivot_info['nearest_level']
             pivot_distance = round(pivot_info['distance'], 2)
             pivot_str = f" | 📍 At {pivot_level} ({pivot_distance}%)"
-        
+
+        score = self._confluence_score(direction, rsi_value, pivot_level, pivot_distance)
+
         alert_record = {
             "timestamp": timestamp,
             "symbol": display_symbol,
@@ -292,28 +304,33 @@ class AlertManager:
             "rsi": round(rsi_value, 2),
             "price": price,
             "pivot_level": pivot_level,
-            "pivot_distance": pivot_distance
+            "pivot_distance": pivot_distance,
+            "confidence": score
         }
         
-        self.alert_history.append(alert_record)
-        if len(self.alert_history) > 1000:
-            self.alert_history.pop(0)
-        
-        # Write immediately using the new method
-        self.append_alert_immediately(alert_record)
-        
+        # Feed gate: only trend-aligned signals reach rsi_alerts.json (dashboard + DoochyBot).
+        # Suppressed signals are still printed and logged for diagnostics, just not published.
+        if publish_to_feed:
+            self.alert_history.append(alert_record)
+            if len(self.alert_history) > 1000:
+                self.alert_history.pop(0)
+
+            # Write immediately using the new method
+            self.append_alert_immediately(alert_record)
+
+        suppress_tag = "" if publish_to_feed else f"  ⛔ SUPPRESSED ({suppress_reason})"
         if direction == "buy":
-            message = f"[{timestamp}] 🔵 BUY ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}"
+            message = f"[{timestamp}] 🔵 BUY ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}{suppress_tag}"
         else:
-            message = f"[{timestamp}] 🔴 SELL ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}"
-        
+            message = f"[{timestamp}] 🔴 SELL ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}{suppress_tag}"
+
         print(message)
-        
+
         if self.config["log_to_file"]:
             with open(self.config["log_file"], "a") as f:
                 f.write(message + "\n")
-        
-        if self.config["enable_audio"]:
+
+        if self.config["enable_audio"] and publish_to_feed:
             play_beep(direction)
 
 # ============================================================
@@ -487,151 +504,56 @@ class RSIBot:
         self.exchange = ExchangeClient(config["exchange"], config)
         self.alert_manager = AlertManager(config)
         self.last_rsi = {}
-        self._webhook_last_sent = {}  # symbol → timestamp of last webhook
 
-    def _format_symbol(self, symbol):
-        """Convert exchange symbol to DoochyBot format (e.g. BTC/USDT:USDT → BTCUSD)."""
-        s = symbol.split(":")[0]   # drop ":USDT" perpetual suffix
-        s = s.replace("/", "")     # "BTC/USDT" → "BTCUSDT"
-        if s.endswith("USDT"):
-            s = s[:-4] + "USD"     # "BTCUSDT" → "BTCUSD"
-        return s
+    @staticmethod
+    def _series_trend(prices, lookback):
+        """Simple price-comparison trend: compare latest close to the one `lookback` candles ago.
 
-    def _get_sl_tp_decimals(self, symbol, price):
-        if "XAU" in symbol or "XAG" in symbol:
-            return 2
-        if price > 1000:
-            return 0
-        if price > 100:
-            return 2
-        if price > 1:
-            return 4
-        return 6
+        Returns 'up', 'down', or 'flat'. No indicator, no extra fetch — just the data
+        MiniSig already holds for this series.
+        """
+        if not prices or lookback < 1 or len(prices) <= lookback:
+            return "flat"
+        now = prices[-1]
+        past = prices[-1 - lookback]
+        if now > past:
+            return "up"
+        if now < past:
+            return "down"
+        return "flat"
 
-    def send_to_doochybot(self, alert_data, pivots):
-        """Format a valid RSI+pivot signal and POST it to the DoochyBot webhook."""
-        if not self.config.get("enable_doochybot_webhook", False):
-            return
+    def _trend_filter_ok(self, direction, tf_data):
+        """Block signals that fight the higher-timeframe trend.
 
-        symbol    = alert_data["symbol"]
-        direction = alert_data["direction"]
-        price     = alert_data["price"]
-        rsi       = alert_data.get("rsi", 0)
-        pivot_level = alert_data.get("pivot_level")
+        Uses the 1H (short-term) and 4H (main) close series already fetched this cycle.
+        BUY is blocked if either series is trending down; SELL if either is trending up.
+        Flat/missing data passes (fail-open). Returns (ok, reason).
+        """
+        if not self.config.get("trend_filter_enabled", True):
+            return True, None
 
-        # Step 1 — Validate signal quality
-        if not pivot_level:
-            return
-        if direction not in ("buy", "sell"):
-            return
-        if direction == "buy" and not (35 <= rsi <= 55):
-            return
-        if direction == "sell" and not (45 <= rsi <= 65):
-            return
+        d1 = tf_data.get("1h")
+        d4 = tf_data.get("4h")
+        t1 = self._series_trend(d1["prices"], self.config.get("trend_lookback_1h", 1)) if d1 else "flat"
+        t4 = self._series_trend(d4["prices"], self.config.get("trend_lookback_4h", 1)) if d4 else "flat"
 
-        # Symbol whitelist — skip symbols DoochyBot doesn't have configured
-        allowed = self.config.get("webhook_allowed_symbols", [])
-        doochybot_symbol = self._format_symbol(symbol)
-        if allowed and doochybot_symbol not in allowed:
-            return
+        if direction == "buy" and ("down" in (t1, t4)):
+            return False, f"trend 1h={t1}/4h={t4}"
+        if direction == "sell" and ("up" in (t1, t4)):
+            return False, f"trend 1h={t1}/4h={t4}"
+        return True, None
 
-        # Rate limit: one webhook per symbol per 5 minutes
-        now = time.time()
-        if now - self._webhook_last_sent.get(symbol, 0) < 300:
-            return
+    def determine_trend(self, prices_4h):
+        """Classify the 4H trend (uptrend/downtrend/ranging/neutral) for RSI-zone shaping.
 
-        if not pivots:
-            return
-
-        # Step 2 — Find which two pivot levels price sits between
-        level_names = ["R3", "R2", "R1", "PP", "S1", "S2", "S3"]
-        level_pairs = [(n, pivots[n]) for n in level_names if pivots.get(n) is not None]
-        level_pairs.sort(key=lambda x: x[1])  # ascending by price
-
-        lower = None   # highest level at or below price
-        upper = None   # lowest level above price
-
-        for name, lp in level_pairs:
-            if lp <= price:
-                lower = (name, lp)
-            elif upper is None:
-                upper = (name, lp)
-
-        # Edge cases: price outside all levels
-        if lower is None and len(level_pairs) >= 2:
-            lower, upper = level_pairs[0], level_pairs[1]
-        elif upper is None and len(level_pairs) >= 2:
-            lower, upper = level_pairs[-2], level_pairs[-1]
-
-        if not lower or not upper:
-            return
-
-        lower_name, lower_price = lower
-        upper_name, upper_price = upper
-
-        # Step 3 — Calculate SL and TP
-        sl_buf = self.config.get("sl_buffer_percent", 0.25) / 100
-        tp_buf = self.config.get("tp_buffer_percent", 0.15) / 100
-
-        if direction == "buy":
-            sl = lower_price * (1 - sl_buf)
-            tp = upper_price * (1 - tp_buf)
-        else:
-            sl = upper_price * (1 + sl_buf)
-            tp = lower_price * (1 + tp_buf)
-
-        decimals = self._get_sl_tp_decimals(symbol, price)
-        sl = round(sl, decimals)
-        tp = round(tp, decimals)
-
-        # Step 4 — Format signal string
-        doochybot_symbol = self._format_symbol(symbol)
-        direction_str = "BUY" if direction == "buy" else "SELL"
-        signal = f"{direction_str} {doochybot_symbol} SL={sl} TP={tp}"
-
-        # Step 5 — POST to DoochyBot (retry up to 3 times on 5xx)
-        url = self.config.get("doochybot_webhook_url", "")
-        if not url:
-            return
-
-        for attempt in range(3):
-            try:
-                resp = requests.post(
-                    url,
-                    data=signal,
-                    headers={"Content-Type": "text/plain"},
-                    timeout=5
-                )
-                if resp.status_code < 300:
-                    print(f"  🚀 Webhook sent: {signal}")
-                    self._webhook_last_sent[symbol] = now
-                    return
-                elif resp.status_code >= 500 and attempt < 2:
-                    time.sleep(2 ** attempt)
-                    continue
-                else:
-                    print(f"  ❌ Webhook failed [{resp.status_code}]: {resp.text[:120]}")
-                    return
-            except Exception as e:
-                if attempt < 2:
-                    time.sleep(2 ** attempt)
-                    continue
-                print(f"  ❌ Webhook error: {e}")
-
-    def determine_trend(self, symbol, timeframe="1h"):
-        """Determine if market is trending up, down, or ranging based on higher timeframe"""
+        Uses the 4H close series already fetched this cycle — no extra request.
+        """
         try:
-            # Fetch 20 candles of higher timeframe (1h or 4h)
-            higher_tf = "1h" if timeframe == "5m" or timeframe == "15m" else "4h"
-            result = self.exchange.fetch_ohlcv_with_fallback(
-                symbol, higher_tf, 20
-            )
-            
-            if result is None or len(result["prices"]) < 20:
+            if not prices_4h or len(prices_4h) < 20:
                 return "neutral"
-            
-            prices = result["prices"]
-            
+
+            prices = prices_4h
+
             # Simple trend detection using moving averages
             sma_short = sum(prices[-10:]) / 10
             sma_long = sum(prices[-20:]) / 20
@@ -777,17 +699,25 @@ class RSIBot:
         print(f"{'='*60}")
         
         for original_symbol in self.config["symbols"]:
-            # Determine trend for this symbol (using 1h timeframe)
-            trend = self.determine_trend(original_symbol)
-            
+            # Fetch every timeframe once up front so the 1H/4H close series are in memory
+            # for the trend filter, no matter which timeframe fires.
+            tf_data = {}
             for timeframe in self.config["timeframes"]:
-                result = self.exchange.fetch_ohlcv_with_fallback(
+                tf_data[timeframe] = self.exchange.fetch_ohlcv_with_fallback(
                     original_symbol, timeframe, self.config["candle_limit"]
                 )
-                
+
+            # 4H trend classification for RSI-zone shaping — reuses the cached 4H series.
+            trend = self.determine_trend(
+                tf_data["4h"]["prices"] if tf_data.get("4h") else None
+            )
+
+            for timeframe in self.config["timeframes"]:
+                result = tf_data.get(timeframe)
+
                 if result is None or len(result["prices"]) < self.config["rsi_period"] + 1:
                     continue
-                
+
                 rsi = calculate_rsi(result["prices"], self.config["rsi_period"])
                 
                 # Skip invalid RSI values
@@ -816,6 +746,7 @@ class RSIBot:
                 # Handle different signal types
                 if pivot_allowed:
                     if zone in ["buy", "buy_cautious", "momentum_buy"] and self.should_alert_state_change(key, zone):
+                        publish, reason = self._trend_filter_ok("buy", tf_data)
                         self.alert_manager.send_alert(
                             symbol=original_symbol,
                             timeframe=timeframe,
@@ -823,21 +754,12 @@ class RSIBot:
                             rsi_value=rsi,
                             price=result["current_price"],
                             actual_symbol=result["actual_symbol"],
-                            pivot_info=pivot_info
+                            pivot_info=pivot_info,
+                            publish_to_feed=publish,
+                            suppress_reason=reason,
                         )
-                        if pivot_info and pivot_info.get("nearest_level"):
-                            pivots = self.exchange.get_daily_pivots(
-                                original_symbol, result["actual_symbol"]
-                            )
-                            self.send_to_doochybot({
-                                "symbol": result["actual_symbol"],
-                                "direction": "buy",
-                                "price": result["current_price"],
-                                "rsi": rsi,
-                                "timeframe": timeframe,
-                                "pivot_level": pivot_info["nearest_level"],
-                            }, pivots)
                     elif zone in ["sell", "sell_cautious", "momentum_sell"] and self.should_alert_state_change(key, zone):
+                        publish, reason = self._trend_filter_ok("sell", tf_data)
                         self.alert_manager.send_alert(
                             symbol=original_symbol,
                             timeframe=timeframe,
@@ -845,20 +767,10 @@ class RSIBot:
                             rsi_value=rsi,
                             price=result["current_price"],
                             actual_symbol=result["actual_symbol"],
-                            pivot_info=pivot_info
+                            pivot_info=pivot_info,
+                            publish_to_feed=publish,
+                            suppress_reason=reason,
                         )
-                        if pivot_info and pivot_info.get("nearest_level"):
-                            pivots = self.exchange.get_daily_pivots(
-                                original_symbol, result["actual_symbol"]
-                            )
-                            self.send_to_doochybot({
-                                "symbol": result["actual_symbol"],
-                                "direction": "sell",
-                                "price": result["current_price"],
-                                "rsi": rsi,
-                                "timeframe": timeframe,
-                                "pivot_level": pivot_info["nearest_level"],
-                            }, pivots)
                     elif zone in ["take_profit_buy", "take_profit_sell"]:
                         # Check cooldown before printing take profit
                         if self.alert_manager.should_alert_take_profit(original_symbol, timeframe):
