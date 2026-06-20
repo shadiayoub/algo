@@ -1,7 +1,8 @@
 services:
   signals:
     build: .
-    container_name: signals
+    # No fixed container_name — Compose names it from the project (e.g. algo-signals-1)
+    # so a leftover/renamed project can't collide on a hardcoded name.
     ports:
       # Dashboard only. The OHLC bridge stays internal on 127.0.0.1:9008.
       - "8080:8080"
