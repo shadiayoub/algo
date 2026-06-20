@@ -9,6 +9,7 @@ import pandas as pd
 import time
 import json
 import sys
+import requests
 from datetime import datetime
 from pathlib import Path
 
@@ -100,8 +101,14 @@ CONFIG = {
         "XPL/USDT:USDT",
         "XRP/USDT:USDT",
         "ZEC/USDT:USDT",
+        # Indices & commodities served by the local cTrader OHLC bridge. These are
+        # routed to the bridge (not Binance) and scanned on bridge_timeframes.
+        "US30.cash",
+        "USOIL.cash",
+        "US500.cash",
+        "US100.cash",
     ],
-    
+
     # Timeframes to monitor
     "timeframes": ["5m", "15m", "1h", "4h"],
     
@@ -123,6 +130,14 @@ CONFIG = {
     "trend_filter_enabled": True,
     "trend_lookback_1h": 1,   # 1H series: current vs N candles ago (1 candle ≈ 1h short-term trend)
     "trend_lookback_4h": 2,   # 4H series: current vs N candles ago (1 candle ≈ 4h main trend)
+
+    # OHLC Bridge — symbols in bridge_symbols are fetched from the local cTrader
+    # bridge instead of Binance, and scanned on bridge_timeframes. Indices return
+    # empty data for intraday on the bridge, so they are scanned on 1d only.
+    "bridge_enabled": True,
+    "bridge_url": "http://localhost:9008",
+    "bridge_symbols": ["US30.cash", "USOIL.cash", "US500.cash", "US100.cash"],
+    "bridge_timeframes": ["1d"],
 
     # Bot Settings
     "check_interval": 15,
@@ -486,8 +501,106 @@ class ExchangeClient:
                 }
         except Exception as e:
             pass
-        
+
         return None
+
+# ============================================================
+# OHLC BRIDGE CLIENT (cTrader indices/commodities)
+# ============================================================
+
+class BridgeClient:
+    """Data source backed by the local OHLC bridge (cTrader).
+
+    Implements only the subset of ExchangeClient's interface that RSIBot uses
+    (fetch_ohlcv_with_fallback, get_daily_pivots) so it can be dropped in for the
+    bridge-routed symbols. Pure data fetching — no signal logic. The bridge
+    returns JSON: {closes, highs, lows, opens, volumes, current_price}.
+    """
+
+    def __init__(self, config):
+        self.config = config
+        self.base_url = config.get("bridge_url", "http://localhost:9008").rstrip("/")
+        self.pivot_cache = {}
+        self.last_pivot_date = {}
+
+    def _get(self, symbol, timeframe, count):
+        try:
+            resp = requests.get(
+                f"{self.base_url}/ohlc",
+                params={"symbol": symbol, "timeframe": timeframe, "count": count},
+                timeout=10,
+            )
+            if resp.status_code != 200:
+                return None
+            return resp.json()
+        except Exception:
+            return None
+
+    def fetch_ohlcv_with_fallback(self, original_symbol, timeframe, limit=100):
+        data = self._get(original_symbol, timeframe, limit)
+        if not data:
+            return None
+        closes = data.get("closes") or []
+        if not closes:
+            return None
+        return {
+            "prices": closes,
+            "current_price": data.get("current_price", closes[-1]),
+            "actual_symbol": original_symbol,
+        }
+
+    def get_daily_pivots(self, symbol, actual_symbol):
+        """Daily pivots from the bridge's 1d candles (yesterday's H/L/C)."""
+        today = datetime.now().strftime("%Y-%m-%d")
+        if symbol in self.pivot_cache and self.last_pivot_date.get(symbol) == today:
+            return self.pivot_cache[symbol]
+
+        data = self._get(actual_symbol, "1d", 2)
+        if not data:
+            return None
+
+        highs = data.get("highs") or []
+        lows = data.get("lows") or []
+        closes = data.get("closes") or []
+        if len(highs) >= 2 and len(lows) >= 2 and len(closes) >= 2:
+            pivots = PivotCalculator.calculate_pivots(highs[-2], lows[-2], closes[-2])
+            self.pivot_cache[symbol] = pivots
+            self.last_pivot_date[symbol] = today
+            return pivots
+
+        return None
+
+# ============================================================
+# MULTI-SOURCE ROUTER
+# ============================================================
+
+class MultiSourceClient:
+    """Routes each symbol to the right data source: bridge symbols to the OHLC
+    bridge, everything else to the configured ccxt exchange. Exposes the same
+    interface RSIBot calls, so the scan loop stays source-agnostic.
+    """
+
+    def __init__(self, config):
+        self.config = config
+        self.exchange_client = ExchangeClient(config["exchange"], config)
+        if config.get("bridge_enabled"):
+            self.bridge_symbols = set(config.get("bridge_symbols", []))
+        else:
+            self.bridge_symbols = set()
+        self.bridge_client = BridgeClient(config) if self.bridge_symbols else None
+
+    def _client_for(self, symbol):
+        if symbol in self.bridge_symbols and self.bridge_client is not None:
+            return self.bridge_client
+        return self.exchange_client
+
+    def fetch_ohlcv_with_fallback(self, original_symbol, timeframe, limit=100):
+        return self._client_for(original_symbol).fetch_ohlcv_with_fallback(
+            original_symbol, timeframe, limit
+        )
+
+    def get_daily_pivots(self, symbol, actual_symbol):
+        return self._client_for(symbol).get_daily_pivots(symbol, actual_symbol)
 
 # ============================================================
 # MAIN BOT
@@ -496,9 +609,18 @@ class ExchangeClient:
 class RSIBot:
     def __init__(self, config):
         self.config = config
-        self.exchange = ExchangeClient(config["exchange"], config)
+        self.exchange = MultiSourceClient(config)
         self.alert_manager = AlertManager(config)
         self.last_rsi = {}
+
+    def _timeframes_for(self, symbol):
+        """Bridge-routed symbols scan their own timeframes (1d); all others use the
+        global timeframe list. Keeps indices off the intraday frames the bridge can't
+        serve, without touching the scan logic itself.
+        """
+        if self.config.get("bridge_enabled") and symbol in set(self.config.get("bridge_symbols", [])):
+            return self.config.get("bridge_timeframes", ["1d"])
+        return self.config["timeframes"]
 
     @staticmethod
     def _series_trend(prices, lookback):
@@ -694,10 +816,13 @@ class RSIBot:
         print(f"{'='*60}")
         
         for original_symbol in self.config["symbols"]:
+            # Bridge symbols (indices) scan 1d only; everything else scans the global list.
+            timeframes = self._timeframes_for(original_symbol)
+
             # Fetch every timeframe once up front so the 1H/4H close series are in memory
             # for the trend filter, no matter which timeframe fires.
             tf_data = {}
-            for timeframe in self.config["timeframes"]:
+            for timeframe in timeframes:
                 tf_data[timeframe] = self.exchange.fetch_ohlcv_with_fallback(
                     original_symbol, timeframe, self.config["candle_limit"]
                 )
@@ -707,7 +832,7 @@ class RSIBot:
                 tf_data["4h"]["prices"] if tf_data.get("4h") else None
             )
 
-            for timeframe in self.config["timeframes"]:
+            for timeframe in timeframes:
                 result = tf_data.get(timeframe)
 
                 if result is None or len(result["prices"]) < self.config["rsi_period"] + 1:

@@ -1,0 +1,19 @@
+# Rebuilt inside the image — keep host artifacts out for a clean install/build.
+ohlc-bridge/node_modules
+ohlc-bridge/dist
+ohlc-bridge/pnpm-lock.yaml
+ohlc-bridge/pnpm-workspace.yaml
+
+# Python caches
+**/__pycache__
+*.pyc
+
+# VCS
+.git
+
+# Runtime data (persisted via the data/ volume, not baked into the image)
+data/rsi_alerts.json
+data/rsi_alerts.log
+
+# NOTE: ohlc-bridge/.env is intentionally NOT ignored — the cTrader
+# credentials must be present in the image.

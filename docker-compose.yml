@@ -1,0 +1,11 @@
+services:
+  signals:
+    build: .
+    container_name: signals
+    ports:
+      # Dashboard only. The OHLC bridge stays internal on 127.0.0.1:9008.
+      - "8080:8080"
+    volumes:
+      # Persist rsi_alerts.json (start.sh symlinks it here) across rebuilds.
+      - ./data:/app/data
+    restart: unless-stopped
