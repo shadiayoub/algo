@@ -67,6 +67,9 @@ const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000]; // ms, caps at 
 
 let heartbeatTimer: NodeJS.Timeout | null = null;
 let lastHeartbeatResponse = 0;
+// True after we've logged an unresponsive-heartbeat warning; suppresses repeats
+// until a heartbeat response (or reconnect) clears it, so we warn once per event.
+let heartbeatUnresponsive = false;
 
 // ============================================================
 // HELPERS
@@ -136,6 +139,7 @@ async function connect(): Promise<void> {
   connected = true;
   reconnectAttempt = 0;
   lastHeartbeatResponse = Date.now();
+  heartbeatUnresponsive = false;
 
   registerDisconnectHandlers();
   startHeartbeat();
@@ -232,6 +236,10 @@ function startHeartbeat(): void {
       "ProtoHeartbeatEvent",
       () => {
         lastHeartbeatResponse = Date.now();
+        if (heartbeatUnresponsive) {
+          console.log("cTrader heartbeat responses resumed");
+          heartbeatUnresponsive = false;
+        }
       },
     );
   } catch {
@@ -252,7 +260,8 @@ function startHeartbeat(): void {
     // Warn if nothing came back within 10s, but keep the connection open —
     // the library manages reconnection.
     setTimeout(() => {
-      if (connected && lastHeartbeatResponse < sentAt) {
+      if (connected && lastHeartbeatResponse < sentAt && !heartbeatUnresponsive) {
+        heartbeatUnresponsive = true;
         console.warn("No heartbeat response from cTrader within 10s (connection kept open)");
       }
     }, 10_000);
