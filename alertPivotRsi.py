@@ -131,6 +131,21 @@ CONFIG = {
     "trend_lookback_1h": 1,   # 1H series: current vs N candles ago (1 candle ≈ 1h short-term trend)
     "trend_lookback_4h": 2,   # 4H series: current vs N candles ago (1 candle ≈ 4h main trend)
 
+    # Confidence Boosters — these ADD points to the confidence score only. They never
+    # gate, block, or suppress a signal: a signal that would publish still publishes,
+    # just with a potentially higher confidence when momentum (MACD) or statistical
+    # extreme (Bollinger %B) confirms what RSI and pivot already saw.
+    "enable_macd_filter": True,
+    "macd_fast": 12,
+    "macd_slow": 26,
+    "macd_signal": 9,
+    "macd_divergence_lookback": 5,
+    "enable_bb_filter": True,
+    "bb_period": 20,
+    "bb_stddev": 2,
+    "bb_upper_threshold": 0.8,
+    "bb_lower_threshold": 0.2,
+
     # OHLC Bridge — symbols in bridge_symbols are fetched from the local cTrader
     # bridge instead of Binance, and scanned on bridge_timeframes. Indices return
     # empty data for intraday on the bridge, so they are scanned on 1d only.
@@ -265,27 +280,57 @@ class AlertManager:
         self.last_tp_alert[key] = now
         return True
     
-    def _confluence_score(self, direction, rsi_value, pivot_level, pivot_distance):
-        """Score signal quality 0–4 based on RSI zone depth and pivot alignment.
+    def _confluence_score(self, direction, rsi_value, pivot_level, pivot_distance,
+                          closes=None, highs=None, lows=None):
+        """Score signal quality 0–6 based on RSI zone, pivot alignment, and momentum.
 
         +2 if RSI is in the ideal zone (buy 40-50, sell 50-60)
         +1 if a pivot level is present
         +1 if pivot_distance < 0.5%
+        +1 if MACD divergence confirms the direction (when enable_macd_filter)
+        +1 if Bollinger %B is at a confirming extreme (when enable_bb_filter)
+
+        The MACD/BB boosters only ADD points — they never block a signal. Returns
+        (score, parts) where parts is the per-component breakdown for logging.
         """
-        score = 0
+        parts = {"RSI": 0, "pivot": 0, "dist": 0, "MACD": 0, "BB": 0}
+
         if direction == "buy" and self.config["buy_zone_low"] <= rsi_value <= self.config["buy_zone_high"]:
-            score += 2
+            parts["RSI"] = 2
         elif direction == "sell" and self.config["sell_zone_low"] <= rsi_value <= self.config["sell_zone_high"]:
-            score += 2
+            parts["RSI"] = 2
         if pivot_level is not None:
-            score += 1
+            parts["pivot"] = 1
         if pivot_distance is not None and pivot_distance < 0.5:
-            score += 1
-        return score
+            parts["dist"] = 1
+
+        if self.config.get("enable_macd_filter", True) and closes is not None:
+            if _macd_divergence(
+                closes, highs, lows, direction,
+                lookback=self.config.get("macd_divergence_lookback", 5),
+                fast=self.config.get("macd_fast", 12),
+                slow=self.config.get("macd_slow", 26),
+                signal=self.config.get("macd_signal", 9),
+            ):
+                parts["MACD"] = 1
+
+        if self.config.get("enable_bb_filter", True) and closes is not None:
+            if _bb_extreme(
+                closes, direction,
+                period=self.config.get("bb_period", 20),
+                stddev=self.config.get("bb_stddev", 2),
+                upper=self.config.get("bb_upper_threshold", 0.8),
+                lower=self.config.get("bb_lower_threshold", 0.2),
+            ):
+                parts["BB"] = 1
+
+        score = sum(parts.values())
+        return score, parts
 
     def send_alert(self, symbol, timeframe, direction, rsi_value, price,
                    actual_symbol=None, pivot_info=None,
-                   publish_to_feed=True, suppress_reason=None):
+                   publish_to_feed=True, suppress_reason=None,
+                   closes=None, highs=None, lows=None):
         # The cooldown only throttles published (actionable) alerts. A suppressed signal
         # must not consume it, or it could block a later trend-aligned publish of the same
         # symbol/timeframe/direction within the cooldown window.
@@ -304,7 +349,14 @@ class AlertManager:
             pivot_distance = round(pivot_info['distance'], 2)
             pivot_str = f" | 📍 At {pivot_level} ({pivot_distance}%)"
 
-        score = self._confluence_score(direction, rsi_value, pivot_level, pivot_distance)
+        score, score_parts = self._confluence_score(
+            direction, rsi_value, pivot_level, pivot_distance,
+            closes=closes, highs=highs, lows=lows
+        )
+        score_breakdown = (
+            f"RSI:{score_parts['RSI']} pivot:{score_parts['pivot']} "
+            f"dist:{score_parts['dist']} MACD:{score_parts['MACD']} BB:{score_parts['BB']}"
+        )
 
         alert_record = {
             "timestamp": timestamp,
@@ -329,10 +381,11 @@ class AlertManager:
             self.append_alert_immediately(alert_record)
 
         suppress_tag = "" if publish_to_feed else f"  ⛔ SUPPRESSED ({suppress_reason})"
+        conf_str = f" | confidence={score} ({score_breakdown})"
         if direction == "buy":
-            message = f"[{timestamp}] 🔵 BUY ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}{suppress_tag}"
+            message = f"[{timestamp}] 🔵 BUY ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}{conf_str}{suppress_tag}"
         else:
-            message = f"[{timestamp}] 🔴 SELL ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}{suppress_tag}"
+            message = f"[{timestamp}] 🔴 SELL ZONE - {display_symbol} {timeframe} | RSI: {rsi_value:.2f} | Price: {price}{pivot_str}{conf_str}{suppress_tag}"
 
         print(message)
 
@@ -362,8 +415,132 @@ def calculate_rsi(prices, period=14):
     
     rs = avg_gain / avg_loss
     rsi = 100 - (100 / (1 + rs))
-    
+
     return rsi.iloc[-1]
+
+# ============================================================
+# CONFIDENCE BOOSTERS (MACD DIVERGENCE + BOLLINGER %B)
+# ============================================================
+# These are confidence-only helpers: they return True/False to award +1 each,
+# and they NEVER raise. Anything they can't compute (too little data, mismatched
+# arrays, zero variance) returns False silently so the scanner keeps running.
+
+def _ema(values, period):
+    """Exponential moving average, returned as a list the same length as `values`.
+
+    Warmup positions (before `period` candles exist) are None. The seed is the SMA
+    of the first `period` values, then standard EMA smoothing. Manual implementation
+    so no external indicator library is required (matches the project's RSI approach).
+    """
+    if not values or len(values) < period or period < 1:
+        return None
+    k = 2 / (period + 1)
+    ema = [None] * len(values)
+    seed = sum(values[:period]) / period
+    ema[period - 1] = seed
+    for i in range(period, len(values)):
+        ema[i] = values[i] * k + ema[i - 1] * (1 - k)
+    return ema
+
+
+def _macd_divergence(closes, highs, lows, direction, lookback=5,
+                     fast=12, slow=26, signal=9):
+    """Detect MACD-vs-price divergence over the last `lookback` candles.
+
+    MACD line = EMA(fast) - EMA(slow) on closes (signal kept for sizing the warmup).
+    The lookback window is split into an older reference half and a recent half:
+
+      Bearish (confirms SELL): recent high > older high, but recent MACD < older MACD
+                               (price climbing while momentum weakens)
+      Bullish (confirms BUY):  recent low < older low, but recent MACD > older MACD
+                               (price falling while momentum quietly strengthens)
+
+    Returns True only when divergence aligns with `direction`. Returns False silently
+    on any shortfall of data — never raises, never warns.
+    """
+    try:
+        if not closes or highs is None or lows is None:
+            return False
+        n = len(closes)
+        if len(highs) != n or len(lows) != n:
+            return False
+        # Enough candles for EMA warmup plus a full lookback window.
+        if n < slow + signal + lookback:
+            return False
+
+        ema_fast = _ema(closes, fast)
+        ema_slow = _ema(closes, slow)
+        if ema_fast is None or ema_slow is None:
+            return False
+        macd_line = [
+            (ema_fast[i] - ema_slow[i])
+            if (ema_fast[i] is not None and ema_slow[i] is not None) else None
+            for i in range(n)
+        ]
+
+        window = list(range(n - lookback, n))
+        if any(macd_line[i] is None for i in window):
+            return False
+
+        # Split the lookback window: older reference vs recent peak/trough.
+        recent_len = max(1, lookback // 2)
+        recent = window[-recent_len:]
+        older = window[:-recent_len]
+        if not older:
+            return False
+
+        if direction == "sell":
+            r_idx = max(recent, key=lambda i: highs[i])
+            o_idx = max(older, key=lambda i: highs[i])
+            price_higher_high = highs[r_idx] > highs[o_idx]
+            macd_lower_high = macd_line[r_idx] < macd_line[o_idx]
+            return bool(price_higher_high and macd_lower_high)
+
+        if direction == "buy":
+            r_idx = min(recent, key=lambda i: lows[i])
+            o_idx = min(older, key=lambda i: lows[i])
+            price_lower_low = lows[r_idx] < lows[o_idx]
+            macd_higher_low = macd_line[r_idx] > macd_line[o_idx]
+            return bool(price_lower_low and macd_higher_low)
+
+        return False
+    except Exception:
+        return False
+
+
+def _bb_extreme(closes, direction, period=20, stddev=2, upper=0.8, lower=0.2):
+    """Check whether the latest close sits at a Bollinger Bands %B extreme.
+
+    %B = (close - lower_band) / (upper_band - lower_band), where the bands are
+    SMA(period) ± stddev * population standard deviation over the last `period` closes.
+
+      BUY  confirmed when %B < `lower` (near the lower band — statistically cheap)
+      SELL confirmed when %B > `upper` (near the upper band — statistically expensive)
+
+    Returns False silently when there isn't enough data or the band has zero width.
+    """
+    try:
+        if not closes or len(closes) < period or period < 1:
+            return False
+        window = closes[-period:]
+        mid = sum(window) / period
+        variance = sum((c - mid) ** 2 for c in window) / period
+        sd = variance ** 0.5
+        if sd == 0:
+            return False
+        upper_band = mid + stddev * sd
+        lower_band = mid - stddev * sd
+        band_width = upper_band - lower_band
+        if band_width == 0:
+            return False
+        pct_b = (closes[-1] - lower_band) / band_width
+        if direction == "buy":
+            return pct_b < lower
+        if direction == "sell":
+            return pct_b > upper
+        return False
+    except Exception:
+        return False
 
 # ============================================================
 # EXCHANGE CLIENT - SUPPORTS MULTIPLE EXCHANGES
@@ -493,9 +670,13 @@ class ExchangeClient:
             ohlcv = self.exchange.fetch_ohlcv(actual_symbol, timeframe=timeframe, limit=limit)
             if ohlcv and len(ohlcv) > 0:
                 closes = [candle[4] for candle in ohlcv]
+                highs = [candle[2] for candle in ohlcv]
+                lows = [candle[3] for candle in ohlcv]
                 current_price = closes[-1] if closes else None
                 return {
                     "prices": closes,
+                    "highs": highs,
+                    "lows": lows,
                     "current_price": current_price,
                     "actual_symbol": actual_symbol
                 }
@@ -545,6 +726,8 @@ class BridgeClient:
             return None
         return {
             "prices": closes,
+            "highs": data.get("highs") or [],
+            "lows": data.get("lows") or [],
             "current_price": data.get("current_price", closes[-1]),
             "actual_symbol": original_symbol,
         }
@@ -877,6 +1060,9 @@ class RSIBot:
                             pivot_info=pivot_info,
                             publish_to_feed=publish,
                             suppress_reason=reason,
+                            closes=result["prices"],
+                            highs=result.get("highs"),
+                            lows=result.get("lows"),
                         )
                     elif zone in ["sell", "sell_cautious", "momentum_sell"] and self.should_alert_state_change(key, zone):
                         publish, reason = self._trend_filter_ok("sell", tf_data)
@@ -890,6 +1076,9 @@ class RSIBot:
                             pivot_info=pivot_info,
                             publish_to_feed=publish,
                             suppress_reason=reason,
+                            closes=result["prices"],
+                            highs=result.get("highs"),
+                            lows=result.get("lows"),
                         )
                     elif zone in ["take_profit_buy", "take_profit_sell"]:
                         # Check cooldown before printing take profit
